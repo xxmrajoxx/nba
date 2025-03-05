@@ -1,0 +1,33 @@
+-- The columns required when creating the game, after you have created the table, you can delete and re-load updated dataset
+
+
+CREATE TABLE AS games(
+Team_ID INT,
+Game_ID INT,
+GAME_DATE DATE,
+MATCHUP VARCHAR(50),
+WL VARCHAR(2),
+W INT,
+L INT,
+W_PCT FLOAT,
+MIN INT,
+FGM INT,
+FGA INT,
+FG_PCT FLOAT,
+FG3M INT,
+FG3A INT,
+FG3_PCT FLOAT,
+FTM INT,
+FTA INT,
+FT_PCT FLOAT,
+OREB INT,
+DREB INT,
+REB INT,
+AST INT,
+STL INT,
+BLK INT,
+TOV INT,
+PF INT,
+PTS INT
+Team VARCHAR(255)
+)
