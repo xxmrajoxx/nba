@@ -1,0 +1,52 @@
+-- Ranking each team total rebounds per month 
+
+SELECT 
+    team,
+    EXTRACT(YEAR FROM game_date) AS year,
+    EXTRACT(MONTH FROM game_date) AS month,
+    SUM(reb) AS total_rebounds,
+    DENSE_RANK() OVER(PARTITION BY EXTRACT(MONTH FROM game_date) ORDER BY SUM(reb) DESC) AS rank
+FROM games
+WHERE EXTRACT(YEAR FROM game_date) = 2025
+GROUP BY 1, 2, 3;
+
+
+-- Obtaining the total rebounds
+-- Do a count to find out how many games each team played has played
+-- Combined both tables to determine which team gets the most average rebounds per game and creating a "Primary Key" to avoid duplicates
+
+WITH SUM_REB_2025 AS
+(
+SELECT 
+    team,
+    EXTRACT(YEAR FROM game_date) AS year,
+    EXTRACT(MONTH FROM game_date) AS month,
+	CONCAT(team, ' - ', EXTRACT(YEAR FROM game_date), '-', EXTRACT(MONTH FROM game_date)) AS team_year_month,
+    SUM(reb) AS total_rebounds
+FROM games
+WHERE EXTRACT(YEAR FROM game_date) = 2025
+GROUP BY 1, 2, 3, 4
+),
+MONTHLY_GAMES_2025 AS
+(
+SELECT 
+	team,
+	EXTRACT(YEAR FROM game_date) AS year,
+    EXTRACT(MONTH FROM game_date) AS month,
+	CONCAT(team, ' - ', EXTRACT(YEAR FROM game_date), '-', EXTRACT(MONTH FROM game_date)) AS team_year_month,
+	count(*) as Number_of_games
+FROM games
+WHERE EXTRACT(YEAR FROM game_date) = 2025
+GROUP BY 1, 2, 3
+)
+SELECT 
+	SUM_REB_2025.team,
+	SUM_REB_2025.year,
+	SUM_REB_2025.month,
+	Total_rebounds,
+	Number_of_games,
+	Total_rebounds/number_of_games as Average_rebounds,
+	DENSE_RANK() OVER(PARTITION BY SUM_REB_2025.month order by total_rebounds desc) as rank
+FROM SUM_REB_2025
+JOIN MONTHLY_GAMES_2025
+ON MONTHLY_GAMES_2025.team_year_month = SUM_REB_2025.team_year_month
