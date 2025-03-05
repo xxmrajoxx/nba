@@ -1,0 +1,600 @@
+-- Charlotte Hornets total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS CHA_FGA;
+
+CREATE TABLE CHA_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Charlotte Hornets';
+
+SELECT * FROM CHA_FGA;
+
+-- Philadelphia 76ers total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS PHI_FGA;
+
+CREATE TABLE PHI_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Philadelphia 76ers';
+
+SELECT * FROM PHI_FGA;
+
+-- Washington Wizards total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS WAS_FGA;
+
+CREATE TABLE WAS_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Washington Wizards';
+
+SELECT * FROM WAS_FGA;
+
+-- Chicago Bulls total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS CHI_FGA;
+
+CREATE TABLE CHI_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Chicago Bulls';
+
+SELECT * FROM CHI_FGA;
+
+-- Cleveland Cavaliers total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS CLE_FGA;
+
+CREATE TABLE CLE_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Cleveland Cavaliers';
+
+SELECT * FROM CLE_FGA;
+
+-- Sacramento Kings total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS SAC_FGA;
+
+CREATE TABLE SAC_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Sacramento Kings';
+
+SELECT * FROM SAC_FGA;
+
+-- New Orleans Pelicans total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS NOP_FGA;
+
+CREATE TABLE NOP_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'New Orleans Pelicans';
+
+SELECT * FROM NOP_FGA;
+
+-- Milwaukee Bucks total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS MIL_FGA;
+
+CREATE TABLE MIL_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Milwaukee Bucks';
+
+SELECT * FROM MIL_FGA;
+
+
+-- Miami Heat total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS MIA_FGA;
+
+CREATE TABLE MIA_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Miami Heat';
+
+SELECT * FROM MIA_FGA;
+
+-- Brooklyn Nets total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS BKN_FGA;
+
+CREATE TABLE BKN_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Brooklyn Nets';
+
+SELECT * FROM BKN_FGA;
+
+-- Indiana Pacers total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS IND_FGA;
+
+CREATE TABLE IND_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Indiana Pacers';
+
+SELECT * FROM IND_FGA;
+
+-- Golden State Warriors total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS GSW_FGA;
+
+CREATE TABLE GSW_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Golden State Warriors';
+
+SELECT * FROM GSW_FGA;
+
+-- Toronto Raptors total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS TOR_FGA;
+
+CREATE TABLE TOR_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Toronto Raptors';
+
+SELECT * FROM TOR_FGA;
+
+-- Atlanta Hawks total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS ATL_FGA;
+
+CREATE TABLE ATL_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Atlanta Hawks';
+
+SELECT * FROM ATL_FGA;
+
+-- Oklahoma City Thunder total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS OKC_FGA;
+
+CREATE TABLE OKC_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Oklahoma City Thunder';
+
+SELECT * FROM OKC_FGA;
+
+-- Los Angeles Lakers total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS LAC_FGA;
+
+CREATE TABLE LAC_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Los Angeles Lakers';
+
+SELECT * FROM LAC_FGA;
+
+-- Los Angeles Lakers total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS BOS_FGA;
+
+CREATE TABLE BOS_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Boston Celtics';
+
+SELECT * FROM BOS_FGA;
+
+-- Houston Rockets total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS HOU_FGA;
+
+CREATE TABLE HOU_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Houston Rockets';
+
+SELECT * FROM HOU_FGA;
+
+-- Dallas Mavericks total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS DAL_FGA;
+
+CREATE TABLE DAL_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Dallas Mavericks';
+
+SELECT * FROM DAL_FGA;
+
+-- New York Knicks total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS NYK_FGA;
+
+CREATE TABLE NYK_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'New York Knicks';
+
+SELECT * FROM NYK_FGA;
+
+-- Memphis Grizzlies total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS MEM_FGA;
+
+CREATE TABLE MEM_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Memphis Grizzlies';
+
+SELECT * FROM MEM_FGA;
+
+-- Utah Jazz total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS UTA_FGA;
+
+CREATE TABLE UTA_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Utah Jazz';
+
+SELECT * FROM UTA_FGA;
+
+-- Denver Nuggets total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS DEN_FGA;
+
+CREATE TABLE DEN_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Denver Nuggets';
+
+SELECT * FROM DEN_FGA;
+
+-- San Antonio Spurs total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS SAS_FGA;
+
+CREATE TABLE SAS_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'San Antonio Spurs';
+
+SELECT * FROM SAS_FGA;
+
+-- Minnesota Timberwolves total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS MIN_FGA;
+
+CREATE TABLE MIN_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Minnesota Timberwolves';
+
+SELECT * FROM MIN_FGA;
+
+-- Portland Trail Blazers total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS POR_FGA;
+
+CREATE TABLE POR_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Portland Trail Blazers';
+
+SELECT * FROM POR_FGA;
+
+-- Detroit Pistons total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS DET_FGA;
+
+CREATE TABLE DET_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Detroit Pistons';
+
+SELECT * FROM DET_FGA;
+
+-- Los Angeles Clippers total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS LAC_FGA;
+
+CREATE TABLE LAC_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Los Angeles Clippers';
+
+SELECT * FROM LAC_FGA;
+
+-- Phoenix Suns total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS PHX_FGA;
+
+CREATE TABLE PHX_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Phoenix Suns';
+
+SELECT * FROM PHX_FGA;
+
+-- Orlando Magic total field goal attempts (not broken down by 2 & 3 pointer attempts)
+
+DROP TABLE IF EXISTS ORL_FGA;
+
+CREATE TABLE ORL_FGA AS
+SELECT 
+	Game_ID,
+	team,
+	game_date,
+	matchup as Match_up,
+	min as game_minutes,
+	fga as Field_goal_attempts,
+	fgm as Field_goals_made,
+	(fga-fgm) as Field_goals_missed,
+	fg_pct as Field_goal_Percentage
+FROM games 
+WHERE team = 'Orlando Magic';
+
+SELECT * FROM ORL_FGA;
