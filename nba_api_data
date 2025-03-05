@@ -1,0 +1,96 @@
+############################################################################## obtain game log data set using NBA API ##############################################################################
+
+import pandas as pd
+import time
+from nba_api.stats.static import teams
+from nba_api.stats.endpoints import teamgamelog
+
+# Define the last six NBA seasons (including 2025)
+SEASONS = ["2019-20", "2020-21", "2021-22", "2022-23", "2023-24", "2024-25"]
+
+# Get all NBA teams
+all_teams = teams.get_teams()
+
+# List to store game log data
+game_logs = []
+
+# Loop through each team and fetch game logs for each season
+for team in all_teams:
+    team_id = team['id']
+    team_name = team['full_name']
+    
+    for season in SEASONS:
+        print(f"Fetching data for {team_name} ({season})...")
+
+        try:
+            # Fetch game logs for the team
+            game_log = teamgamelog.TeamGameLog(team_id=team_id, season=season)
+            df = game_log.get_data_frames()[0]
+            df["Team"] = team_name  # Add team name to the data
+
+            # Append to the list
+            game_logs.append(df)
+
+            # Sleep to avoid API rate limits
+            time.sleep(1)  
+
+        except Exception as e:
+            print(f"Error fetching data for {team_name} ({season}): {e}")
+
+# Combine all data into a single DataFrame
+final_df = pd.concat(game_logs, ignore_index=True)
+
+# Save to CSV (optional)
+final_df.to_csv("nba_game_logs_2019_to_2025.csv", index=False)
+
+# Display the first few rows
+print(final_df.head())
+
+
+############################################################################## player stats ##############################################################################
+
+import pandas as pd
+import time
+from nba_api.stats.static import players
+from nba_api.stats.endpoints import playergamelog
+
+# Define the last six NBA seasons (including 2025)
+SEASONS = ["2019-20", "2020-21", "2021-22", "2022-23", "2023-24", "2024-25"]
+
+# Get all active NBA players
+all_players = players.get_active_players()
+
+# List to store game log data
+game_logs = []
+
+# Loop through each player and fetch game logs for each season
+for player in all_players:
+    player_id = player['id']
+    player_name = player['full_name']
+    
+    for season in SEASONS:
+        print(f"Fetching data for {player_name} ({season})...")
+
+        try:
+            # Fetch game logs for the player (including advanced stats)
+            game_log = playergamelog.PlayerGameLog(player_id=player_id, season=season)
+            df = game_log.get_data_frames()[0]
+            df["Player"] = player_name  # Add player name to the data
+
+            # Append to the list
+            game_logs.append(df)
+
+            # Sleep to avoid API rate limits
+            time.sleep(0.5)  
+
+        except Exception as e:
+            print(f"Error fetching data for {player_name} ({season}): {e}")
+
+# Combine all data into a single DataFrame
+final_df = pd.concat(game_logs, ignore_index=True)
+
+# Save to CSV (optional)
+final_df.to_csv("nba_player_game_logs_2019_to_2025.csv", index=False)
+
+# Display the first few rows
+print(final_df.head())
