@@ -1,0 +1,571 @@
+-- creating tables for individual teams
+-- For the Charlotte Hornets
+
+DROP TABLE IF EXISTS CHA_REBOUNDS;
+
+CREATE TABLE CHA_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Charlotte Hornets';
+
+ALTER TABLE CHA_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM CHA_REBOUNDS;
+
+--For Philadelphia 76ers
+
+DROP TABLE IF EXISTS PHI_REBOUNDS;
+
+CREATE TABLE PHI_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Philadelphia 76ers';
+
+ALTER TABLE PHI_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM PHI_REBOUNDS;
+
+--For Washington Wizards
+
+DROP TABLE IF EXISTS WAS_REBOUNDS;
+
+CREATE TABLE WAS_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Washington Wizards';
+
+ALTER TABLE WAS_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM WAS_REBOUNDS;
+
+--For Chicago Bulls 
+
+DROP TABLE IF EXISTS CHI_REBOUNDS;
+
+CREATE TABLE CHI_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Chicago Bulls';
+
+ALTER TABLE CHI_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM CHI_REBOUNDS;
+
+--For Cleveland Cavaliers
+
+DROP TABLE IF EXISTS CLE_REBOUNDS;
+
+CREATE TABLE CLE_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Cleveland Cavaliers';
+
+ALTER TABLE CLE_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM CLE_REBOUNDS;
+
+--For Sacramento Kings
+
+DROP TABLE IF EXISTS SAC_REBOUNDS;
+
+CREATE TABLE SAC_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Sacramento Kings';
+
+ALTER TABLE SAC_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM SAC_REBOUNDS;
+
+--For New Orleans Pelicans
+
+DROP TABLE IF EXISTS NOP_REBOUNDS;
+
+CREATE TABLE NOP_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'New Orleans Pelicans';
+
+ALTER TABLE NOP_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM NOP_REBOUNDS;
+
+--For Milwaukee Bucks
+
+DROP TABLE IF EXISTS MIL_REBOUNDS;
+
+CREATE TABLE MIL_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Milwaukee Bucks';
+
+ALTER TABLE MIL_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM MIL_REBOUNDS;
+
+--For Miami Heat
+
+DROP TABLE IF EXISTS MIA_REBOUNDS;
+
+CREATE TABLE MIA_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Miami Heat';
+
+ALTER TABLE MIA_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM MIA_REBOUNDS;
+
+--For Brooklyn Nets
+
+DROP TABLE IF EXISTS BKN_REBOUNDS;
+
+CREATE TABLE BKN_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Brooklyn Nets';
+
+ALTER TABLE BKN_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM BKN_REBOUNDS;
+
+--For Indiana Pacers
+
+DROP TABLE IF EXISTS IND_REBOUNDS;
+
+CREATE TABLE IND_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Indiana Pacers';
+
+ALTER TABLE IND_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM IND_REBOUNDS;
+
+--For Golden State Warriors
+
+DROP TABLE IF EXISTS GSW_REBOUNDS;
+
+CREATE TABLE GSW_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Golden State Warriors';
+
+ALTER TABLE GSW_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM GSW_REBOUNDS;
+
+--For Toronto Raptors
+
+DROP TABLE IF EXISTS TOR_REBOUNDS;
+
+CREATE TABLE TOR_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Toronto Raptors';
+
+ALTER TABLE TOR_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM TOR_REBOUNDS;
+
+--For Atlanta Hawks
+
+DROP TABLE IF EXISTS ATL_REBOUNDS;
+
+CREATE TABLE ATL_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Atlanta Hawks';
+
+ALTER TABLE ATL_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM ATL_REBOUNDS;
+
+--For Oklahoma City Thunder
+
+DROP TABLE IF EXISTS OKC_REBOUNDS;
+
+CREATE TABLE OKC_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Oklahoma City Thunder';
+
+ALTER TABLE OKC_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM OKC_REBOUNDS;
+
+--For Los Angeles Lakers
+
+DROP TABLE IF EXISTS LAL_REBOUNDS;
+
+CREATE TABLE LAL_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Los Angeles Lakers';
+
+ALTER TABLE LAL_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM LAL_REBOUNDS;
+
+--For Boston Celtics
+
+DROP TABLE IF EXISTS BOS_REBOUNDS;
+
+CREATE TABLE BOS_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Boston Celtics';
+
+ALTER TABLE BOS_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM BOS_REBOUNDS;
+
+--For Houston Rockets
+
+DROP TABLE IF EXISTS HOU_REBOUNDS;
+
+CREATE TABLE HOU_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Houston Rockets';
+
+ALTER TABLE HOU_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM HOU_REBOUNDS;
+
+--For Dallas Mavericks
+
+DROP TABLE IF EXISTS DAL_REBOUNDS;
+
+CREATE TABLE DAL_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Dallas Mavericks';
+
+ALTER TABLE DAL_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM DAL_REBOUNDS;
+
+--For New York Knicks
+
+DROP TABLE IF EXISTS NYK_REBOUNDS;
+
+CREATE TABLE NYK_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'New York Knicks';
+
+ALTER TABLE NYK_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM NYK_REBOUNDS;
+
+--For Memphis Grizzlies
+
+DROP TABLE IF EXISTS MEP_REBOUNDS;
+
+CREATE TABLE MEM_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Memphis Grizzlies';
+
+ALTER TABLE MEM_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM MEM_REBOUNDS;
+
+--For Utah Jazz
+
+DROP TABLE IF EXISTS UTA_REBOUNDS;
+
+CREATE TABLE UTA_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Utah Jazz';
+
+ALTER TABLE UTA_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM UTA_REBOUNDS;
+
+--For Denver Nuggets
+
+DROP TABLE IF EXISTS DEN_REBOUNDS;
+
+CREATE TABLE DEN_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Denver Nuggets';
+
+ALTER TABLE DEN_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM DEN_REBOUNDS;
+
+--For San Antonio Spurs
+
+DROP TABLE IF EXISTS SAS_REBOUNDS;
+
+CREATE TABLE SAS_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'San Antonio Spurs';
+
+ALTER TABLE SAS_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM SAS_REBOUNDS;
+
+--For Minnesota Timberwolves
+
+DROP TABLE IF EXISTS MIN_REBOUNDS;
+
+CREATE TABLE MIN_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Minnesota Timberwolves';
+
+ALTER TABLE MIN_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM MIN_REBOUNDS;
+
+--For Portland Trail Blazers
+
+DROP TABLE IF EXISTS POR_REBOUNDS;
+
+CREATE TABLE POR_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Portland Trail Blazers';
+
+ALTER TABLE POR_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM POR_REBOUNDS;
+
+--For Detroit Pistons
+
+DROP TABLE IF EXISTS DET_REBOUNDS;
+
+CREATE TABLE DET_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Detroit Pistons';
+
+ALTER TABLE DET_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM DET_REBOUNDS;
+
+--For Los Angeles Clippers
+
+DROP TABLE IF EXISTS LAC_REBOUNDS;
+
+CREATE TABLE LAC_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Los Angeles Clippers';
+
+ALTER TABLE LAC_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM LAC_REBOUNDS;
+
+--For Phoenix Suns
+
+DROP TABLE IF EXISTS PHX_REBOUNDS;
+
+CREATE TABLE PHX_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Phoenix Suns';
+
+ALTER TABLE PHX_REBOUNDS ADD PRIMARY KEY (game_id);
+
+SELECT * FROM PHX_REBOUNDS;
+
+--For Orlando Magic
+
+DROP TABLE IF EXISTS ORL_REBOUNDS;
+
+CREATE TABLE ORL_REBOUNDS AS
+SELECT 
+	Game_ID,
+	game_date,
+	matchup as Match_up,
+	reb as Total_rebounds,
+	oreb as Off_rebounds,
+	dreb as Def_rebounds
+FROM GAMES
+WHERE team = 'Orlando Magic';
+
+ALTER TABLE ORL_REBOUNDS ADD PRIMARY KEY (game_id);
+
+
+-----------------------------end of creating rebound tables--------------------------------
