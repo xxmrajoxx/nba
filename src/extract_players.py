@@ -4,7 +4,8 @@ import pandas as pd
 import logging 
 import time
 from typing import Optional, List, Dict
-import os
+from pathlib import Path
+from datetime import date, UTC, datetime
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -34,14 +35,17 @@ PLAYER_NAMES: List[str] = [
 def get_player_id(player_name: str) -> int:
     try:
         logging.info(f"obtaining player id for {player_name}")
-        nba_players = players.find_players_by_full_name(player_name)
+        matches = players.find_players_by_full_name(player_name)
 
-        if not nba_players:
+        if not matches:
             logging.warning(f"Player not found: {player_name}")
-        return None
+            return None
+        
+        exact = [p for p in matches if p.get("full_name", "").lower() == player_name.lower()]
+        chosen = exact[0] if exact else matches[0]
 
-        return int(nba_players[0]["id"])
-    
+        return int(chosen["id"])
+
     except Exception:
         logging.exception(f"Error while looking up player_id for: {player_name}")
         return None
@@ -83,13 +87,12 @@ def fetch_player_game_logs(player_name: str, season: str, league_id: str="00", s
     
 def main():
     SEASON = "2025-26"
-    all_dfs = []
+    all_dfs: List[pd.DataFrame] = []
 
     logging.info(f"commencing nba player game log extraction")
 
     for name in PLAYER_NAMES:
         df = fetch_player_game_logs(player_name=name, season=SEASON)
-
         if not df.empty:
             all_dfs.append(df)
 
@@ -100,11 +103,14 @@ def main():
         return
     
     final_df = pd.concat(all_dfs, ignore_index=True)
-    output_file = f"nba_player_game_logs{SEASON}.csv"
-    final_df.to_csv(output_file, index=False)
+    src_dir = Path(__file__).resolve().parent
+    safe_season = SEASON.replace("/","-")
+    extract_date = datetime.now(UTC).strftime("%Y%m%d")
+    output_path = src_dir / f"nba_player_game_logs_{safe_season}_{extract_date}"
 
-    logging.info(f"saved file")
+    final_df.to_csv(output_path, index=False)
+    logging.info(f"saved file to {output_path}")
 
 if __name__ =="__main__":
-    main
+    main()
 
