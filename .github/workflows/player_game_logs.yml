@@ -1,0 +1,44 @@
+name: NBA Player Game Logs (weekly)
+
+on:
+  workflow_dispatch:
+  schedule:
+    # GitHub schedules run in UTC.
+    # Sydney 09:00 Saturday:
+    # AEST (UTC+10): 23:00 Friday UTC
+    # AEDT (UTC+11): 22:00 Friday UTC
+
+    # ✅ AEST (most of the year)
+    - cron: "0 23 * * 5"
+
+    # ✅ AEDT (during daylight savings) - uncomment when needed
+    # - cron: "0 22 * * 5"
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12.7
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.7"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run extraction script
+        run: |
+          python nba/src/extract_players.py
+
+      - name: Upload CSV artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nba-player-game-logs
+          path: nba/src/*.csv
