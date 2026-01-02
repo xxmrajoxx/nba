@@ -35,10 +35,11 @@ jobs:
 
       - name: Run extraction script
         run: |
-          python nba/src/extract_players.py
+          python src/extract_players.py
 
       - name: Upload CSV artifact
         uses: actions/upload-artifact@v4
         with:
           name: nba-player-game-logs
           path: nba/src/*.csv
+
