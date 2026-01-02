@@ -1,7 +1,7 @@
 import boto3
 from botocore.exceptions import ClientError
 
-BUCKET_NAME = "ajo-nba-stats-unique-123456"   # must be globally unique
+BUCKET_NAME = "<BUCKET_NAME>"   # must be globally unique
 REGION = "ap-southeast-2"                      # Sydney
 
 def create_bucket(bucket_name: str, region: str) -> None:

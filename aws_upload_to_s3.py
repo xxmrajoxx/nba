@@ -3,7 +3,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 # ✅ CHANGE THIS
-BUCKET_NAME = "ajo-nba-stats-unique-123456"
+BUCKET_NAME = "<BUCKET_NAME>"   # must be globally unique
 
 # Local folder containing CSVs
 LOCAL_FOLDER = "player_game_logs"
