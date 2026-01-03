@@ -1,9 +1,10 @@
-name: NBA Player Game Logs (weekly)
+name: Fetch NBA Team Game Logs (Weekly)
 
 on:
   workflow_dispatch: {}
   schedule:
-    # Sunday 9:00am Sydney time (AEST) = Saturday 23:00 UTC
+    # Sunday 9:00am Sydney time
+    # = Saturday 23:00 UTC (AEST)
     - cron: "0 23 * * 6"
 
 permissions:
@@ -12,6 +13,7 @@ permissions:
 jobs:
   run-script:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -26,7 +28,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run script
+      - name: Run NBA game logs script
         run: |
           python src/team_game_logs/game_logs.py
 
@@ -40,6 +42,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "Weekly update: game logs"
+            git commit -m "Weekly update: team game logs"
             git push
           fi
