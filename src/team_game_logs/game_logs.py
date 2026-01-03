@@ -10,7 +10,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 OUTPUT_DIR = Path("src/team_game_logs")
 
-
 def fetch_nba_teams() -> pd.DataFrame:
     logging.info("Fetching NBA teams")
 
@@ -22,18 +21,11 @@ def fetch_nba_teams() -> pd.DataFrame:
         .reset_index(drop=True)
     )
 
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    team_df.to_csv(OUTPUT_DIR / "nba_teams.csv", index=False)
-
+    # OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    # team_df.to_csv(OUTPUT_DIR / "nba_teams.csv", index=False)
     return team_df
 
-
-def fetch_team_game_logs(
-    team_id: int,
-    season: str,
-    season_type: str = "Regular Season",
-    league_id: str = "00",
-) -> pd.DataFrame:
+def fetch_team_game_logs(team_id: int, season: str, season_type: str = "Regular Season", league_id: str = "00",) -> pd.DataFrame:
     endpoint = teamgamelogs.TeamGameLogs(
         team_id_nullable=team_id,
         season_nullable=season,
@@ -43,11 +35,7 @@ def fetch_team_game_logs(
 
     return endpoint.get_data_frames()[0]
 
-
-def fetch_all_teams_game_logs(
-    season: str = "2025-26",
-    season_type: str = "Regular Season",
-) -> None:
+def fetch_all_teams_game_logs(season: str = "2025-26", season_type: str = "Regular Season") -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     team_df = fetch_nba_teams()
@@ -85,7 +73,6 @@ def fetch_all_teams_game_logs(
 
     final_df.to_csv(output_file, index=False)
     logging.info(f"Saved combined game logs -> {output_file}")
-
 
 if __name__ == "__main__":
     fetch_all_teams_game_logs(

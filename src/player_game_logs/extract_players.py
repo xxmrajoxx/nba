@@ -96,7 +96,7 @@ def main():
         if not df.empty:
             all_dfs.append(df)
 
-            time.sleep(1)
+            time.sleep(2)
 
     if not all_dfs:
         logging.error(f"no game logs collected for any player")
@@ -104,7 +104,7 @@ def main():
     
     final_df = pd.concat(all_dfs, ignore_index=True)
 
-    BASE_DIR = Path(__file__).resolve().parents[1]  # project root (nba/)
+    BASE_DIR = Path(__file__).resolve().parents[1] 
     OUTPUT_DIR = BASE_DIR / "src/player_game_logs"
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
