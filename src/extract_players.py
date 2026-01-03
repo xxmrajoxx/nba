@@ -104,14 +104,17 @@ def main():
     
     final_df = pd.concat(all_dfs, ignore_index=True)
 
-    src_dir = Path(__file__).resolve().parent
-    safe_season = SEASON.replace("/","-")
+    BASE_DIR = Path(__file__).resolve().parents[1]  # project root (nba/)
+    OUTPUT_DIR = BASE_DIR / "src/player_game_logs"
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    safe_season = SEASON.replace("/", "-")
     extract_date = datetime.now(UTC).strftime("%Y%m%d")
 
-    output_path = src_dir / f"nba_player_game_logs_{safe_season}_{extract_date}.csv"
+    output_path = OUTPUT_DIR / f"nba_player_game_logs_{safe_season}_{extract_date}.csv"
     final_df.to_csv(output_path, index=False)
 
-    logging.info(f"saved file to {output_path}")
+    logging.info(f"Saved file to {output_path}")
 
 if __name__ =="__main__":
     main()
