@@ -29,7 +29,7 @@ jobs:
 
       - name: Run script
         run: |
-          python scripts/generate_message.py
+          python generate_message.py
 
       - name: Commit output (if changed)
         run: |
