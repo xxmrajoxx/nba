@@ -57,7 +57,7 @@ def fetch_all_teams_game_logs(season: str = "2025-26", season_type: str = "Regul
 
             all_logs.append(df)
 
-            time.sleep(1)
+            time.sleep(2)
 
         except Exception:
             logging.exception(f"Failed for {team_name}")

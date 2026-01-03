@@ -13,12 +13,12 @@ def create_bucket(bucket_name: str, region: str) -> None:
             Bucket=bucket_name,
             CreateBucketConfiguration={"LocationConstraint": region},
         )
-        print(f"✅ Bucket created: s3://{bucket_name} (region: {region})")
+        print(f"Bucket created: s3://{bucket_name} (region: {region})")
 
     except ClientError as e:
         code = e.response.get("Error", {}).get("Code", "Unknown")
         msg = e.response.get("Error", {}).get("Message", str(e))
-        print(f"❌ Failed ({code}): {msg}")
+        print(f"Failed ({code}): {msg}")
         raise
 
 if __name__ == "__main__":

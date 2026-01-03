@@ -2,7 +2,7 @@ import os
 import boto3
 from botocore.exceptions import ClientError
 
-# ✅ CHANGE THIS
+# CHANGE THIS
 BUCKET_NAME = "<BUCKET_NAME>"   # must be globally unique
 
 # Local folder containing CSVs
@@ -28,13 +28,13 @@ def upload_folder(bucket_name: str, local_folder: str, s3_prefix: str) -> None:
 
         try:
             s3.upload_file(local_path, bucket_name, s3_key)
-            print(f"✅ Uploaded: {local_path}")
-            print(f"➡️  s3://{bucket_name}/{s3_key}")
+            print(f"Uploaded: {local_path}")
+            print(f"s3://{bucket_name}/{s3_key}")
         except ClientError as e:
-            print(f"❌ Failed to upload {filename}")
+            print(f"Failed to upload {filename}")
             raise e
 
-    print("🎉 All files uploaded successfully.")
+    print("All files uploaded successfully.")
 
 
 if __name__ == "__main__":
