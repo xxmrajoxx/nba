@@ -8,7 +8,7 @@ import time
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-OUTPUT_DIR = Path("src/gamelogs")
+OUTPUT_DIR = Path("src/team_game_logs")
 
 
 def fetch_nba_teams() -> pd.DataFrame:
