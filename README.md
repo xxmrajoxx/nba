@@ -51,9 +51,17 @@ All jobs go through one command. Always use the virtual environment's Python:
 | `game_logs --season 2024-25` | One specific season | up to 4 |
 | `game_logs --last 7` | The last 7 seasons, counting the current one | up to 28 |
 | `game_logs --backfill` | Every season since the longest-tenured active player's debut (2003-04) | ~96 |
-| `all` | `teams`, `players`, `schedule`, `game_logs` in that order | |
+| `usage` | Loads usage and scoring splits per player per game | up to 4 per season |
+| `team_logs` | Loads team game logs (box score and advanced) | up to 4 per season |
+| `tracking` | Loads tracking (distance, speed) and hustle stats for every game date in the game logs not fetched yet | 2 per game date |
+| `tracking --limit 20` | Only the next 20 game dates | 40 |
+| `all` | Every job above, in dependency order | |
 
-Order matters the first time: players reference teams, and game logs reference players. `all` handles that for you.
+`game_logs`, `usage` and `team_logs` take the same season options: `--season 2024-25`, `--last N`, `--backfill`, or `--loaded` (every season that already has rows in `dbo.player_game_log`, handy for lining the other tables up with the game logs). With no option they load the current season.
+
+**`tracking` is the slow one.** It needs two requests per game date, about 3.5 seconds a date, so eight seasons (around 1,640 dates) takes roughly an hour and a half the first time. Each date is saved as it completes: stop it with Ctrl+C whenever you like and run it again to carry on. After the first load a daily run only fetches the new dates. Note that `all` includes it.
+
+Order matters the first time: players reference teams, game logs reference players, and tracking takes its game dates from the game logs. `all` handles that for you.
 
 **Every job is safe to re-run.** Because loading is an upsert, running a job twice gives the same result as running it once. If a job is interrupted, just run it again.
 
@@ -106,6 +114,25 @@ One row per player per game. Key: (`player_id`, `game_id`). Only players in `dbo
 - **Box score:** `minutes`, `pts`, `reb`, `ast`, `stl`, `blk`, `tov`, `pf`, `plus_minus`, and field goal / three-point / free throw makes, attempts and percentages.
 - **Advanced:** `off_rating`, `def_rating`, `net_rating`, `usg_pct`, `ts_pct`, `efg_pct`, `ast_pct`, `ast_to`, `ast_ratio`, `oreb_pct`, `dreb_pct`, `reb_pct`, `tm_tov_pct`, `pace`, `pie`, `poss`.
 
+### `dbo.player_game_usage`
+One row per player per game. Key: (`player_id`, `game_id`). Joins one-to-one with `dbo.player_game_log`.
+
+- **Share of team totals while on court:** `pct_fga` (share of the team's shot attempts), `pct_pts`, `pct_ast`, `pct_reb`, `pct_tov` and the rest.
+- **Shot and points profile:** `pct_fga_3pt`, `pct_pts_paint`, `pct_pts_fb` (fast break), `pct_pts_ft` and so on.
+- **Assisted or self-created:** `pct_ast_fgm` is the share of the player's made shots that a teammate assisted; `pct_uast_fgm` is the unassisted share.
+
+### `dbo.team_game_log`
+One row per team per game, so two rows per game. Key: (`team_id`, `game_id`). Same box score and advanced columns as the player log. Use it for team totals and for the opponent in a game (same `game_id`, different `team_id`).
+
+### `dbo.player_game_tracking`
+One row per player per game. Key: (`player_id`, `game_id`).
+
+- **Tracking:** `dist_miles`, `dist_miles_off`, `dist_miles_def`, `avg_speed` (miles per hour), `avg_speed_off`, `avg_speed_def`. Available from 2013-14.
+- **Hustle:** `contested_shots`, `deflections`, `charges_drawn`, `screen_assists`, `loose_balls_recovered`, `box_outs` and their breakdowns. Available from 2015-16; an occasional player-game has tracking but no hustle row.
+
+### `etl.date_load`
+Which game dates the `tracking` job has already fetched. To re-fetch a date, delete its row here and run the job again.
+
 ### `etl.job_run`
 One row per job execution: job name, start and finish time, status (`running` / `success` / `failed`), rows loaded, and the error message if it failed. Check on the pipeline with:
 
@@ -127,6 +154,9 @@ Staging tables used by the upsert. Each holds whatever the most recent load put 
 | `dbo.v_player_game_birthday` | Every game log row plus `days_from_birthday` (negative = before, 0 = on the day), `is_birthday_week`, `is_birthday`, and `age_at_game` |
 | `dbo.v_birthday_week_vs_season` | One row per player-season: birthday-week averages next to that player's averages for the rest of the same season |
 | `dbo.v_upcoming_birthday_week_games` | Games still to be played that fall in an active player's birthday week |
+| `dbo.v_player_game_features` | One wide row per player per game for modelling: everything in `v_player_game_birthday` plus usage and scoring splits, tracking and hustle stats, team and opponent totals, `days_rest`, and `birthday_phase` (`before` / `on` / `after` / `none`) |
+
+`v_player_game_features` is the table to model from. Two things to know about it: `days_rest` is empty for a player's first game in the data and is very large for the first game of each season (the gap is the whole off-season), and `team_*` / `opponent_*` columns describe the same game, so they are context for explaining a performance, not inputs you would have before tip-off.
 
 The nearest birthday is not always in the same calendar year as the game: for a December 30 birthday, a January 1 game is 2 days *after* the birthday, not 363 days before the next one. The views check the previous, current and next year's birthday and keep the closest.
 
@@ -149,7 +179,16 @@ Comparing a player's birthday-week games against their whole career would be mis
 - **Active players only.** The data covers players active today, so older seasons contain only the players who lasted. That is a survivor sample, not the whole league as it was.
 - **Changing the window.** To try a different definition, change the `<= 3` in the two views in `sql/02_views.sql` and run `init_db` again.
 
+### The two explanations being tested
+
+| Explanation | What it predicts | Where to look |
+|---|---|---|
+| Teammates feed the birthday player | More volume: higher `usg_pct`, `pct_fga`, `pct_pts`, and more assisted baskets (`pct_ast_fgm`), mostly on the day itself | `birthday_phase = 'on'` |
+| He partied and is tired | Worse quality: lower `ts_pct`, fewer `minutes`, more `tov`, less `dist_miles` and `avg_speed`, fewer `deflections` and `contested_shots`, mostly in the next game or two | `birthday_phase = 'after'` |
+
 ## Design decisions
+
+**Tracking and hustle are fetched per game date, not per game.** They are only published per game through box score endpoints, which would mean about 21,000 requests for eight seasons. The league-wide tracking and hustle endpoints accept a one-day date range and return every player who played that day; because nobody plays twice in a day, that is the same per-game data in about 3,300 requests. The game id is then looked up from the game log.
 
 **Game logs are fetched per season, not per player or per team.** Calling `PlayerGameLogs` without a player or team filter returns every player's games for a season in one response. Seven seasons with both season types and both stat sets is 28 requests, against about 840 looping over teams and about 17,000 looping over players.
 
@@ -181,6 +220,9 @@ nba/
 │   ├── player.py                  players job
 │   ├── schedule.py                schedule job
 │   ├── player_game_logs.py        game logs job
+│   ├── player_game_usage.py       usage and scoring splits job
+│   ├── team_game_logs.py          team game logs job
+│   ├── player_tracking.py         tracking and hustle job
 │   └── analysis.py                birthday-week analysis
 ├── scripts/
 │   └── register_scheduled_task.ps1
@@ -198,6 +240,7 @@ To add a new table: add a `CREATE TABLE` (with an `updated_at` column) to `sql/0
 | `Login failed` / `Cannot open database "nba"` | Run `init_db` first, and check SQL Server is running. |
 | `Read timed out` warnings | Normal now and then; the request is retried automatically. If every request fails, wait a few minutes before trying again. |
 | `dbo.player is empty` | Run the `players` job before `game_logs`. |
+| `tracking` says `0 game dates to fetch` | Either everything is fetched already, or `dbo.player_game_log` is empty. |
 | A job shows `running` in `etl.job_run` forever | It was killed mid-run. Re-run the job; the stale row is harmless. |
 | New column missing in SSMS | Right-click the table in Object Explorer and choose Refresh. |
 

@@ -87,3 +87,31 @@ CROSS APPLY (
 WHERE s.game_date >= CAST(GETDATE() AS DATE)
   AND ABS(b.days_from_birthday) <= 3;
 GO
+
+-- One wide row per player per game for modelling: the birthday columns plus usage and
+-- scoring splits, tracking and hustle stats, team and opponent context, and rest days.
+-- Usage, tracking and team columns are NULL for games those jobs have not loaded yet.
+CREATE OR ALTER VIEW dbo.v_player_game_features AS
+SELECT
+    b.*,
+    -- before / on / after separates "teammates feed him on the day" from "tired the day after"
+    CASE
+        WHEN b.days_from_birthday = 0 THEN 'on'
+        WHEN b.days_from_birthday BETWEEN -3 AND -1 THEN 'before'
+        WHEN b.days_from_birthday BETWEEN 1 AND 3 THEN 'after'
+        ELSE 'none'
+    END AS birthday_phase,
+    DATEDIFF(DAY, LAG(b.game_date) OVER (PARTITION BY b.player_id ORDER BY b.game_date), b.game_date) AS days_rest,
+    u.pct_fga, u.pct_fg3a, u.pct_fta, u.pct_pts, u.pct_ast, u.pct_reb, u.pct_tov,
+    u.pct_fga_3pt, u.pct_pts_paint, u.pct_pts_fb, u.pct_pts_ft,
+    u.pct_ast_fgm, u.pct_uast_fgm, u.pct_ast_2pm, u.pct_ast_3pm,
+    t.dist_miles, t.dist_miles_off, t.dist_miles_def, t.avg_speed, t.avg_speed_off, t.avg_speed_def,
+    t.contested_shots, t.deflections, t.charges_drawn, t.screen_assists, t.loose_balls_recovered, t.box_outs,
+    tm.pts AS team_pts, tm.fga AS team_fga, tm.ast AS team_ast, tm.pace AS team_pace, tm.off_rating AS team_off_rating,
+    opp.team_id AS opponent_team_id, opp.pts AS opponent_pts, opp.off_rating AS opponent_off_rating
+FROM dbo.v_player_game_birthday AS b
+LEFT JOIN dbo.player_game_usage AS u ON u.player_id = b.player_id AND u.game_id = b.game_id
+LEFT JOIN dbo.player_game_tracking AS t ON t.player_id = b.player_id AND t.game_id = b.game_id
+LEFT JOIN dbo.team_game_log AS tm ON tm.game_id = b.game_id AND tm.team_id = b.team_id
+LEFT JOIN dbo.team_game_log AS opp ON opp.game_id = b.game_id AND opp.team_id <> b.team_id;
+GO
