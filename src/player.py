@@ -1,61 +1,78 @@
 import logging
-import time
-from datetime import date
 
 import pandas as pd
 from nba_api.stats.endpoints import CommonAllPlayers, CommonPlayerInfo
+from sqlalchemy import bindparam, text
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
+import db
+from nba_client import fetch
+
 logger = logging.getLogger(__name__)
 
-REQUEST_DELAY_SECONDS = 0.6
-OUTPUT_CSV_PATH = "active_players.csv"
+DETAILS_BATCH_SIZE = 50
 
 
 def get_active_players() -> pd.DataFrame:
-    all_players = CommonAllPlayers(is_only_current_season=1).get_data_frames()[0]
-    active = all_players[all_players["ROSTERSTATUS"] == 1].copy()
-    return active[["PERSON_ID", "DISPLAY_FIRST_LAST", "TEAM_ID", "TEAM_NAME", "TEAM_ABBREVIATION"]]
+    all_players = fetch(CommonAllPlayers, is_only_current_season=1).get_data_frames()[0]
+    active = all_players[all_players["ROSTERSTATUS"] == 1]
+    df = active[["PERSON_ID", "DISPLAY_FIRST_LAST", "TEAM_ID", "FROM_YEAR", "TO_YEAR"]].rename(columns={
+        "PERSON_ID": "player_id",
+        "DISPLAY_FIRST_LAST": "full_name",
+        "TEAM_ID": "team_id",
+        "FROM_YEAR": "from_year",
+        "TO_YEAR": "to_year",
+    })
+    # Free agents come back with team_id 0, which is not a real team.
+    df["team_id"] = df["team_id"].astype("Int64").mask(df["team_id"] == 0)
+    df["from_year"] = pd.to_numeric(df["from_year"], errors="coerce").astype("Int64")
+    df["to_year"] = pd.to_numeric(df["to_year"], errors="coerce").astype("Int64")
+    df["is_active"] = True
+    return df.reset_index(drop=True)
 
 
-def calculate_age(birthdate: date) -> int:
-    today = date.today()
-    return today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
-
-
-def get_birthdates(player_ids: list) -> pd.DataFrame:
+def get_player_details(player_ids: list) -> pd.DataFrame:
     records = []
     for player_id in player_ids:
         try:
-            info = CommonPlayerInfo(player_id=player_id).get_data_frames()[0]
-            birthdate = pd.to_datetime(info.loc[0, "BIRTHDATE"]).date()
+            info = fetch(CommonPlayerInfo, player_id=player_id).get_data_frames()[0].iloc[0]
         except Exception as e:
+            # Leave the birthdate NULL; the next run will pick this player up again.
             logger.error(f"Failed to fetch player info for player_id {player_id}: {e}")
-            birthdate = None
-        records.append({"PERSON_ID": player_id, "BIRTHDATE": birthdate})
-        time.sleep(REQUEST_DELAY_SECONDS)
-    return pd.DataFrame(records)
+            continue
+        birthdate = pd.to_datetime(info["BIRTHDATE"], errors="coerce")
+        records.append({
+            "player_id": player_id,
+            "birthdate": birthdate.date() if pd.notnull(birthdate) else None,
+            "position": info["POSITION"] or None,
+            "height": info["HEIGHT"] or None,
+            "weight_lbs": pd.to_numeric(info["WEIGHT"], errors="coerce"),
+            "country": info["COUNTRY"] or None,
+        })
+    df = pd.DataFrame(records)
+    if not df.empty:
+        df["weight_lbs"] = df["weight_lbs"].astype("Int64")
+    return df
 
 
-def build_active_players_df() -> pd.DataFrame:
+def run() -> int:
     active = get_active_players()
-    birthdates = get_birthdates(active["PERSON_ID"].tolist())
-    df = active.merge(birthdates, on="PERSON_ID", how="left")
-    df["AGE"] = df["BIRTHDATE"].apply(lambda b: calculate_age(b) if pd.notnull(b) else None)
+    rows = db.upsert(active, "player", keys=["player_id"])
 
-    df = df.rename(columns={
-        "PERSON_ID": "player_id",
-        "DISPLAY_FIRST_LAST": "full_name",
-        "AGE": "age",
-        "BIRTHDATE": "birthdate",
-        "TEAM_ID": "team_id",
-        "TEAM_NAME": "team_name",
-        "TEAM_ABBREVIATION": "team_abbreviation",
-    })
-    return df[["player_id", "full_name", "age", "birthdate", "team_id", "team_name", "team_abbreviation"]]
+    # Anyone no longer on the active list (retired, waived out of the league) is kept but flagged.
+    with db.get_engine().begin() as conn:
+        conn.execute(
+            text("UPDATE dbo.player SET is_active = 0 WHERE is_active = 1 AND player_id NOT IN :ids")
+            .bindparams(bindparam("ids", expanding=True)),
+            {"ids": active["player_id"].tolist()},
+        )
 
+    # Birthdates need one API call per player and never change, so only fetch the ones we lack.
+    # Batches are saved as they complete, so an interrupted run resumes where it stopped.
+    missing = db.read_sql("SELECT player_id FROM dbo.player WHERE birthdate IS NULL AND is_active = 1")
+    missing_ids = missing["player_id"].tolist()
+    logger.info(f"Fetching details for {len(missing_ids)} players without a birthdate")
+    for start in range(0, len(missing_ids), DETAILS_BATCH_SIZE):
+        details = get_player_details(missing_ids[start:start + DETAILS_BATCH_SIZE])
+        db.upsert(details, "player", keys=["player_id"])
 
-if __name__ == "__main__":
-    df = build_active_players_df()
-    df.to_csv(OUTPUT_CSV_PATH, index=False)
-    logger.info(f"Wrote {len(df)} active players to {OUTPUT_CSV_PATH}")
+    return rows

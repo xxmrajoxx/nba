@@ -1,0 +1,4 @@
+nba_api>=1.11
+pandas>=3.0
+SQLAlchemy>=2.0
+pyodbc>=5.3
