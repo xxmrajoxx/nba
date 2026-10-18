@@ -7,6 +7,7 @@
     python src/run_job.py game_logs --last 7    the last 7 seasons
     python src/run_job.py usage --loaded        every season that already has game logs
     python src/run_job.py tracking --limit 20   the next 20 game dates not fetched yet
+    python src/run_job.py schedule --loaded     past schedules, for tip-off times and arenas
 """
 import argparse
 import sys
@@ -30,8 +31,8 @@ JOB_ORDER = ["teams", "players", "schedule", "game_logs", "usage", "team_logs", 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run NBA pipeline jobs")
     parser.add_argument("job", choices=["init_db", "all"] + JOB_ORDER)
-    seasons = parser.add_argument_group("which seasons (game_logs, usage, team_logs; default: the current season)")
-    seasons.add_argument("--season", help="a specific season, e.g. 2024-25 (also schedule and tracking)")
+    seasons = parser.add_argument_group("which seasons (schedule, game_logs, usage, team_logs; default: the current season)")
+    seasons.add_argument("--season", help="a specific season, e.g. 2024-25 (also tracking)")
     seasons.add_argument("--last", type=int, help="the last N seasons, counting the current one")
     seasons.add_argument("--backfill", action="store_true", help="every season since the longest-tenured player's debut")
     seasons.add_argument("--loaded", action="store_true", help="every season that already has rows in dbo.player_game_log")
@@ -51,7 +52,7 @@ def main() -> int:
     jobs = {
         "teams": teams.run,
         "players": player.run,
-        "schedule": lambda: schedule.run(season=args.season),
+        "schedule": lambda: schedule.run(chosen_seasons()),
         "game_logs": lambda: player_game_logs.run(chosen_seasons()),
         "usage": lambda: player_game_usage.run(chosen_seasons()),
         "team_logs": lambda: team_game_logs.run(chosen_seasons()),

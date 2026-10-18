@@ -2,7 +2,7 @@
 
 What we are working on next, the data behind it, the models to try, and the order to do it in. For how the pipeline works and how to run it, see [README.md](README.md).
 
-_Status as of 11 October 2026._
+_Status as of 18 October 2026._
 
 ## The question
 
@@ -25,15 +25,16 @@ Both could be true at once and cancel out in a whole-week average, so the analys
 | Player game logs, box score and advanced | `dbo.player_game_log` | 2017-18 to 2024-25, 112,850 rows | Outcomes: points, efficiency, minutes, turnovers, usage rate |
 | Usage and scoring splits | `dbo.player_game_usage` | Every game log row | "Teammates feed him": share of team shots, assisted baskets |
 | Team game logs | `dbo.team_game_log` | Every game in those seasons | Team totals, opponent, pace |
-| Schedule | `dbo.schedule` | 2026-27 | Upcoming birthday-week games |
+| Schedule | `dbo.schedule` | 2017-18 to 2026-27 | Tip-off times, arena city, upcoming birthday-week games |
+| Derived context | `v_player_game_context` and related views | Every game log row | Rest, recent form, key teammates out, opponent strength going in, missed games |
 
 ### Partly loaded
 
 | Dataset | Table | Coverage | Used for |
 |---|---|---|---|
-| Tracking (distance, speed) and hustle stats | `dbo.player_game_tracking` | 3 of 1,637 game dates | "Partied and tired": the most direct fatigue signals |
+| Tracking (distance, speed), passing, touches, hustle, starter flag | `dbo.player_game_tracking` | 3 of 1,637 game dates | Fatigue signals for "partied and tired"; passes received and touches for "teammates feed him" |
 
-Finishing this is the first next step. It takes about an hour and a half and can be stopped and resumed:
+Finishing this is the first next step. It takes about two to two and a half hours and can be stopped and resumed:
 
 ```powershell
 .venv\Scripts\python.exe src\run_job.py tracking
@@ -45,9 +46,9 @@ Finishing this is the first next step. It takes about an hour and a half and can
 |---|---|---|---|
 | Preseason game logs | Early-to-mid October birthdays (Josh Giddey, October 10) only ever fall in the preseason, so those players have no birthday games in the data at all | Cheap: one more season type in the existing job | High |
 | 2025-26 game logs | The most recent completed season is missing | Cheap: `game_logs --season 2025-26`, then `usage` and `team_logs` | High |
-| Missed games | A player who sits out the day after his birthday is absent from the game logs, so the most tired players may be silently missing. Derive from team games the player's team played that he did not | No new data: SQL over `team_game_log` and `player_game_log` | High |
-| Opponent strength before the game | Season-to-date defensive rating of the opponent, as a fair measure of how hard the game was | No new data: rolling average over `team_game_log` | Medium |
-| Travel and time zones | Fatigue unrelated to the birthday that we should control for | Derivable from arena city in `dbo.schedule` for 2026-27 only; older seasons need more data | Low |
+| Travel distance and time zones | Fatigue unrelated to the birthday. Arena city is now loaded, but distance and time zone need arena coordinates, which `nba_api` does not provide | A small static table of 30 arenas | Low |
+| Shot locations | Are birthday shots easier looks or worse ones? | 30 requests per season (the league-wide call is capped) | Later |
+| Quarter-by-quarter splits | A hangover should show early in the game and fade | 10,000+ requests | Only if the "after" dip is real |
 | Injury reports | Separate "rested" from "hurt" for missed games | No clean source in `nba_api` | Low |
 
 ## What we have to work with
@@ -106,8 +107,8 @@ This answers a different question: does knowing about the birthday help predict 
 2. **Fill the data gaps.** Load 2025-26, and add preseason as a season type so October birthdays are covered.
 3. **Run the first-pass analysis.** `src/analysis.py` compares birthday week with the rest of the season. It is written but has never been run.
 4. **Explore before modelling.** Average each outcome by `days_from_birthday` from -7 to +7 and plot it. If either explanation is true, it should be visible here first.
-5. **Build the missed-games table.** Team games the player did not appear in, flagged by birthday phase.
-6. **Build the modelling dataset.** A view or table with rolling features and opponent strength to date, checked for leakage.
+5. **Check the missed games.** `v_player_missed_games` is built; compare how often players miss games in each birthday phase against their normal rate.
+6. **Finalise the modelling dataset.** `v_player_game_features` now has pre-game context (rest, form, absences, opponent strength); pick the inputs and check them for leakage.
 7. **Fit the effect model.** One regression per main outcome; report coefficients and intervals for before, on and after.
 8. **Fit the prediction model.** Baseline, then boosted trees with and without birthday features.
 9. **Write up the findings.** What the data supports, what it does not, and the limits below.

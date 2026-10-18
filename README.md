@@ -6,6 +6,8 @@ A local data pipeline that pulls NBA data from [nba_api](https://github.com/swar
 
 Everything runs on your own machine: Python fetches the data, SQL Server stores it, and SQL views plus a small Python script do the analysis.
 
+New to the code? [ETL_GUIDE.md](ETL_GUIDE.md) explains how the pipeline works step by step, with diagrams. [ROADMAP.md](ROADMAP.md) covers what comes next.
+
 ## How it fits together
 
 ```
@@ -46,20 +48,20 @@ All jobs go through one command. Always use the virtual environment's Python:
 | `teams` | Loads the 30 teams | 0 (bundled with nba_api) |
 | `players` | Loads active players; fetches birthdate, position, height, weight and country for any player who doesn't have them yet | 1 + one per new player |
 | `schedule` | Loads the current season's schedule | 1 |
-| `schedule --season 2025-26` | Loads a specific season's schedule | 1 |
+| `schedule --loaded` | Loads past schedules for every season with game logs (tip-off times, arenas) | 1 per season |
 | `game_logs` | Loads game logs for the current season | up to 4 |
 | `game_logs --season 2024-25` | One specific season | up to 4 |
 | `game_logs --last 7` | The last 7 seasons, counting the current one | up to 28 |
 | `game_logs --backfill` | Every season since the longest-tenured active player's debut (2003-04) | ~96 |
 | `usage` | Loads usage and scoring splits per player per game | up to 4 per season |
 | `team_logs` | Loads team game logs (box score and advanced) | up to 4 per season |
-| `tracking` | Loads tracking (distance, speed) and hustle stats for every game date in the game logs not fetched yet | 2 per game date |
-| `tracking --limit 20` | Only the next 20 game dates | 40 |
+| `tracking` | Loads tracking (distance, speed), passing, touches, hustle stats and the starter flag for every game date in the game logs not fetched yet | 5 per game date |
+| `tracking --limit 20` | Only the next 20 game dates | 100 |
 | `all` | Every job above, in dependency order | |
 
-`game_logs`, `usage` and `team_logs` take the same season options: `--season 2024-25`, `--last N`, `--backfill`, or `--loaded` (every season that already has rows in `dbo.player_game_log`, handy for lining the other tables up with the game logs). With no option they load the current season.
+`schedule`, `game_logs`, `usage` and `team_logs` take the same season options: `--season 2024-25`, `--last N`, `--backfill`, or `--loaded` (every season that already has rows in `dbo.player_game_log`, handy for lining the other tables up with the game logs). With no option they load the current season.
 
-**`tracking` is the slow one.** It needs two requests per game date, about 3.5 seconds a date, so eight seasons (around 1,640 dates) takes roughly an hour and a half the first time. Each date is saved as it completes: stop it with Ctrl+C whenever you like and run it again to carry on. After the first load a daily run only fetches the new dates. Note that `all` includes it.
+**`tracking` is the slow one.** It needs five requests per game date, about 5 seconds a date, so eight seasons (around 1,640 dates) takes roughly two to two and a half hours the first time. Each date is saved as it completes: stop it with Ctrl+C whenever you like and run it again to carry on. After the first load a daily run only fetches the new dates. Note that `all` includes it.
 
 Order matters the first time: players reference teams, game logs reference players, and tracking takes its game dates from the game logs. `all` handles that for you.
 
@@ -129,6 +131,11 @@ One row per player per game. Key: (`player_id`, `game_id`).
 
 - **Tracking:** `dist_miles`, `dist_miles_off`, `dist_miles_def`, `avg_speed` (miles per hour), `avg_speed_off`, `avg_speed_def`. Available from 2013-14.
 - **Hustle:** `contested_shots`, `deflections`, `charges_drawn`, `screen_assists`, `loose_balls_recovered`, `box_outs` and their breakdowns. Available from 2015-16; an occasional player-game has tracking but no hustle row.
+- **Passing:** `passes_made`, `passes_received`, `potential_ast` (passes that would have been assists if the shot went in), `secondary_ast`, `ft_ast`, `ast_pts_created`. `passes_received` is the most direct "teammates feed him" signal.
+- **Touches:** `touches`, `front_ct_touches`, `time_of_poss` (minutes with the ball), `avg_sec_per_touch`, `avg_drib_per_touch`, `pts_per_touch`, and `elbow_touches` / `post_touches` / `paint_touches`.
+- **Role:** `is_starter`. A coach starting a player on his birthday would raise minutes and usage for reasons that are neither teammates nor tiredness.
+
+Every player in the game log for a fetched date gets a row, even if one of the stat sets came back empty for him.
 
 ### `etl.date_load`
 Which game dates the `tracking` job has already fetched. To re-fetch a date, delete its row here and run the job again.
@@ -147,16 +154,28 @@ Staging tables used by the upsert. Each holds whatever the most recent load put 
 
 **Definition:** a game is in a player's *birthday week* if it was played within 3 days either side of their birthday (a 7-day window centred on the day).
 
-### Views ([sql/02_views.sql](sql/02_views.sql))
+### Views ([sql/02_views.sql](sql/02_views.sql), [sql/03_derived_views.sql](sql/03_derived_views.sql))
 
 | View | What it gives you |
 |---|---|
 | `dbo.v_player_game_birthday` | Every game log row plus `days_from_birthday` (negative = before, 0 = on the day), `is_birthday_week`, `is_birthday`, and `age_at_game` |
 | `dbo.v_birthday_week_vs_season` | One row per player-season: birthday-week averages next to that player's averages for the rest of the same season |
 | `dbo.v_upcoming_birthday_week_games` | Games still to be played that fall in an active player's birthday week |
-| `dbo.v_player_game_features` | One wide row per player per game for modelling: everything in `v_player_game_birthday` plus usage and scoring splits, tracking and hustle stats, team and opponent totals, `days_rest`, and `birthday_phase` (`before` / `on` / `after` / `none`) |
+| `dbo.v_player_game_context` | Everything known about a player **before** a game: `days_rest`, `back_to_back`, `games_last_7_days`, last-10 and season-to-date form (`pts_last10`, `usg_pct_to_date`...), `key_teammates_out`, `top_scorer_out`, the opponent's and own team's ratings so far this season, `tipoff_et` / `tipoff_hour_et`, `arena_city`, `previous_arena_city` |
+| `dbo.v_team_game_context` | Each team's season-to-date offensive, defensive and net rating, pace and win % going into each game |
+| `dbo.v_team_key_players` | Each team's three highest scorers per season (10+ games), with the dates they were on the team |
+| `dbo.v_team_game_absences` | How many of a team's key players sat out each game, and whether the top scorer did |
+| `dbo.v_player_missed_games` | Games a player's team played, while he was on it, that he did not play in, with `birthday_phase` |
+| `dbo.v_player_game_features` | One wide row per player per game for modelling: everything in `v_player_game_birthday`, `birthday_phase` (`before` / `on` / `after` / `none`), all of `v_player_game_context`, plus usage and scoring splits, tracking, passing, touches, hustle, the starter flag, and same-game team and opponent totals |
 
-`v_player_game_features` is the table to model from. Two things to know about it: `days_rest` is empty for a player's first game in the data and is very large for the first game of each season (the gap is the whole off-season), and `team_*` / `opponent_*` columns describe the same game, so they are context for explaining a performance, not inputs you would have before tip-off.
+`v_player_game_features` is the table to model from. Its columns fall into two kinds:
+
+- **Known before tip-off** (the `v_player_game_context` columns): safe as model inputs. `days_rest` and the form columns are empty for a player's first game of each season.
+- **Describe the game itself** (box score, usage, tracking, `team_*`, `opponent_pts`...): outcomes to explain, never inputs for predicting that same game.
+
+Two limits of the derived views: `key_teammates_out` only knows about players in `dbo.player`, so in older seasons a top scorer who has since retired is invisible; and `v_player_missed_games` cannot tell rest from injury, suspension or a G League assignment.
+
+`dbo.fn_birthday_distance(birthdate, game_date)` is a reusable function returning `days_from_birthday` and `birthday_phase` for any date.
 
 The nearest birthday is not always in the same calendar year as the game: for a December 30 birthday, a January 1 game is 2 days *after* the birthday, not 363 days before the next one. The views check the previous, current and next year's birthday and keep the closest.
 
@@ -209,7 +228,8 @@ nba/
 ├── requirements.txt
 ├── sql/
 │   ├── 01_schema.sql              tables, schemas, indexes
-│   └── 02_views.sql               birthday-week views
+│   ├── 02_views.sql               birthday-week views
+│   └── 03_derived_views.sql       pre-game context, absences, missed games, modelling view
 ├── src/
 │   ├── run_job.py                 command line entry point
 │   ├── config.py                  connection settings, API pacing, logging
@@ -222,7 +242,7 @@ nba/
 │   ├── player_game_logs.py        game logs job
 │   ├── player_game_usage.py       usage and scoring splits job
 │   ├── team_game_logs.py          team game logs job
-│   ├── player_tracking.py         tracking and hustle job
+│   ├── player_tracking.py         tracking, passing, touches, hustle and starter job
 │   └── analysis.py                birthday-week analysis
 ├── scripts/
 │   └── register_scheduled_task.ps1

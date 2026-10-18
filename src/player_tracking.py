@@ -1,7 +1,7 @@
 import logging
 
 import pandas as pd
-from nba_api.stats.endpoints import LeagueDashPtStats, LeagueHustleStatsPlayer
+from nba_api.stats.endpoints import LeagueDashPlayerStats, LeagueDashPtStats, LeagueHustleStatsPlayer
 from sqlalchemy import text
 
 import db
@@ -13,10 +13,20 @@ DATASET = "tracking"
 FIRST_TRACKING_SEASON = "2013-14"
 FIRST_HUSTLE_SEASON = "2015-16"
 
-TRACKING_COLUMNS = [
-    "DIST_FEET", "DIST_MILES", "DIST_MILES_OFF", "DIST_MILES_DEF",
-    "AVG_SPEED", "AVG_SPEED_OFF", "AVG_SPEED_DEF",
-]
+# Player tracking stat sets, by the API's pt_measure_type name.
+PT_MEASURES = {
+    "SpeedDistance": [
+        "DIST_FEET", "DIST_MILES", "DIST_MILES_OFF", "DIST_MILES_DEF",
+        "AVG_SPEED", "AVG_SPEED_OFF", "AVG_SPEED_DEF",
+    ],
+    "Passing": [
+        "PASSES_MADE", "PASSES_RECEIVED", "FT_AST", "SECONDARY_AST", "POTENTIAL_AST", "AST_PTS_CREATED",
+    ],
+    "Possessions": [
+        "TOUCHES", "FRONT_CT_TOUCHES", "TIME_OF_POSS", "AVG_SEC_PER_TOUCH", "AVG_DRIB_PER_TOUCH",
+        "PTS_PER_TOUCH", "ELBOW_TOUCHES", "POST_TOUCHES", "PAINT_TOUCHES",
+    ],
+}
 HUSTLE_COLUMNS = [
     "CONTESTED_SHOTS", "CONTESTED_SHOTS_2PT", "CONTESTED_SHOTS_3PT", "DEFLECTIONS",
     "CHARGES_DRAWN", "SCREEN_ASSISTS", "SCREEN_AST_PTS", "OFF_LOOSE_BALLS_RECOVERED",
@@ -24,48 +34,70 @@ HUSTLE_COLUMNS = [
 ]
 
 
-def get_tracking_for_date(game_date, season: str, season_type: str) -> pd.DataFrame:
-    """Tracking and hustle stats for every player who played on one date.
-
-    These stats are only published per game through box score endpoints (one request per
-    game). Asking the league-wide endpoints for a single day returns the same numbers for
-    every game that day in one request, because a player plays at most one game a day.
-    """
-    day = game_date.strftime("%m/%d/%Y")
-    tracking = fetch(
+def get_pt_stats(measure: str, day: str, season: str, season_type: str) -> pd.DataFrame:
+    df = fetch(
         LeagueDashPtStats,
         season=season,
         season_type_all_star=season_type,
         player_or_team="Player",
-        pt_measure_type="SpeedDistance",
+        pt_measure_type=measure,
         per_mode_simple="Totals",
         date_from_nullable=day,
         date_to_nullable=day,
     ).get_data_frames()[0]
     # reindex keeps the column set fixed when a result is empty or an old season lacks a stat
-    df = tracking.reindex(columns=["PLAYER_ID"] + TRACKING_COLUMNS)
+    return df.reindex(columns=["PLAYER_ID"] + PT_MEASURES[measure])
 
-    if season >= FIRST_HUSTLE_SEASON:
-        hustle = fetch(
-            LeagueHustleStatsPlayer,
-            season=season,
-            season_type_all_star=season_type,
-            per_mode_time="Totals",
-            date_from_nullable=day,
-            date_to_nullable=day,
-        ).get_data_frames()[0]
-        df = df.merge(hustle.reindex(columns=["PLAYER_ID"] + HUSTLE_COLUMNS), on="PLAYER_ID", how="outer")
-    else:
-        df = df.reindex(columns=["PLAYER_ID"] + TRACKING_COLUMNS + HUSTLE_COLUMNS)
 
+def get_hustle_stats(day: str, season: str, season_type: str) -> pd.DataFrame:
+    if season < FIRST_HUSTLE_SEASON:
+        return pd.DataFrame(columns=["PLAYER_ID"] + HUSTLE_COLUMNS)
+    df = fetch(
+        LeagueHustleStatsPlayer,
+        season=season,
+        season_type_all_star=season_type,
+        per_mode_time="Totals",
+        date_from_nullable=day,
+        date_to_nullable=day,
+    ).get_data_frames()[0]
+    return df.reindex(columns=["PLAYER_ID"] + HUSTLE_COLUMNS)
+
+
+def get_starter_ids(day: str, season: str, season_type: str) -> set:
+    df = fetch(
+        LeagueDashPlayerStats,
+        season=season,
+        season_type_all_star=season_type,
+        starter_bench_nullable="Starters",
+        date_from_nullable=day,
+        date_to_nullable=day,
+    ).get_data_frames()[0]
+    return set(df["PLAYER_ID"])
+
+
+def get_tracking_for_date(game_date, season: str, season_type: str) -> pd.DataFrame:
+    """Tracking, passing, touches, hustle and starter data for every player who played on one date.
+
+    These stats are only published per game through box score endpoints (one request per
+    game). Asking the league-wide endpoints for a single day returns the same numbers for
+    every game that day in one request each, because a player plays at most one game a day.
+    """
+    day = game_date.strftime("%m/%d/%Y")
+    frames = [get_pt_stats(measure, day, season, season_type) for measure in PT_MEASURES]
+    frames.append(get_hustle_stats(day, season, season_type))
+
+    df = frames[0]
+    for frame in frames[1:]:
+        df = df.merge(frame, on="PLAYER_ID", how="outer")
     df.columns = df.columns.str.lower()
+    df.attrs["starter_ids"] = get_starter_ids(day, season, season_type)
     return df
 
 
 def run(season: str = None, limit: int = None) -> int:
-    """Fetch tracking and hustle stats for every game date in dbo.player_game_log that has
-    not been fetched yet, oldest first. Each date is saved as it completes, so the job can
-    be stopped (Ctrl+C) and re-run to carry on from where it left off."""
+    """Fetch tracking data for every game date in dbo.player_game_log that has not been
+    fetched yet, oldest first. Each date is saved as it completes, so the job can be
+    stopped (Ctrl+C) and re-run to carry on from where it left off."""
     pending = db.read_sql(f"""
         SELECT DISTINCT l.game_date, l.season, l.season_type
         FROM dbo.player_game_log AS l
@@ -84,15 +116,17 @@ def run(season: str = None, limit: int = None) -> int:
     mark_loaded = text("INSERT INTO etl.date_load (dataset, game_date, rows_loaded) VALUES (:dataset, :game_date, :rows)")
     total = 0
     for i, row in enumerate(pending.itertuples(index=False), start=1):
-        df = get_tracking_for_date(row.game_date, row.season, row.season_type)
-        # The endpoints give no game id, so take it from the game log (which also limits rows to known players).
+        stats = get_tracking_for_date(row.game_date, row.season, row.season_type)
+        # Start from the game log: the endpoints give no game id, and every player who
+        # played should get a row (and a starter flag) even if a tracking stat is missing.
         with db.get_engine().connect() as conn:
-            games = pd.read_sql(
+            df = pd.read_sql(
                 text("SELECT player_id, game_id, game_date FROM dbo.player_game_log WHERE game_date = :game_date"),
                 conn,
                 params={"game_date": row.game_date},
             )
-        df = games.merge(df, on="player_id", how="inner")
+        df["is_starter"] = df["player_id"].isin(stats.attrs["starter_ids"])
+        df = df.merge(stats, on="player_id", how="left")
 
         rows = db.upsert(df, "player_game_tracking", keys=["player_id", "game_id"])
         with db.get_engine().begin() as conn:

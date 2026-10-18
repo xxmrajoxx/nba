@@ -3,7 +3,6 @@ from nba_api.stats.endpoints import ScheduleLeagueV2
 
 import db
 from nba_client import fetch
-from seasons import current_season
 
 COLUMNS = {
     "gameId": "game_id",
@@ -38,5 +37,5 @@ def build_schedule_df(season: str) -> pd.DataFrame:
     return df.sort_values("game_date").reset_index(drop=True)
 
 
-def run(season: str = None) -> int:
-    return db.upsert(build_schedule_df(season or current_season()), "schedule", keys=["game_id"])
+def run(seasons: list) -> int:
+    return sum(db.upsert(build_schedule_df(season), "schedule", keys=["game_id"]) for season in seasons)

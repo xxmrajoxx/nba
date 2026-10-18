@@ -278,3 +278,34 @@ CREATE TABLE etl.date_load (
     CONSTRAINT pk_date_load PRIMARY KEY (dataset, game_date)
 );
 GO
+
+-- Passing, touches and starter columns added to the tracking table after it was first created.
+IF COL_LENGTH('dbo.player_game_tracking', 'is_starter') IS NULL
+ALTER TABLE dbo.player_game_tracking ADD
+    is_starter          BIT   NULL,
+    -- passing
+    passes_made         SMALLINT NULL,
+    passes_received     SMALLINT NULL,
+    ft_ast              SMALLINT NULL,
+    secondary_ast       SMALLINT NULL,
+    potential_ast       SMALLINT NULL,
+    ast_pts_created     SMALLINT NULL,
+    -- possessions
+    touches             SMALLINT NULL,
+    front_ct_touches    SMALLINT NULL,
+    time_of_poss        FLOAT NULL,   -- minutes with the ball
+    avg_sec_per_touch   FLOAT NULL,
+    avg_drib_per_touch  FLOAT NULL,
+    pts_per_touch       FLOAT NULL,
+    elbow_touches       SMALLINT NULL,
+    post_touches        SMALLINT NULL,
+    paint_touches       SMALLINT NULL;
+GO
+
+-- Window functions in the derived views look up a player's or team's games in date order.
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'ix_player_game_log_player_date')
+CREATE INDEX ix_player_game_log_player_date ON dbo.player_game_log (player_id, game_date) INCLUDE (team_id, season);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'ix_team_game_log_team_date')
+CREATE INDEX ix_team_game_log_team_date ON dbo.team_game_log (team_id, game_date);
+GO
