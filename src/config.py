@@ -5,6 +5,8 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SQL_DIR = PROJECT_ROOT / "sql"
 LOG_DIR = PROJECT_ROOT / "logs"
+# Parquet snapshot of the database for the app (written by the export job).
+DATA_DIR = Path(os.getenv("NBA_DATA_DIR", PROJECT_ROOT / "data"))
 
 # Override any of these with environment variables, e.g. NBA_SQL_SERVER=localhost\SQLEXPRESS
 SERVER = os.getenv("NBA_SQL_SERVER", "localhost")

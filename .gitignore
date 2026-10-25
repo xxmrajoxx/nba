@@ -6,3 +6,6 @@ __pycache__/
 claude.md
 logs/
 *.csv
+outputs/
+# Parquet snapshot for the app; remove this line when you want to deploy it with the code.
+data/

@@ -72,9 +72,11 @@ def upsert(df: pd.DataFrame, table: str, keys: list, schema: str = "dbo") -> int
     return len(df)
 
 
-def read_sql(sql: str) -> pd.DataFrame:
+def read_sql(sql: str, params: dict = None) -> pd.DataFrame:
+    """Run a query and return a DataFrame. Pass values through `params` (as :name in the
+    SQL), never by formatting them into the string."""
     with get_engine().connect() as conn:
-        return pd.read_sql(text(sql), conn)
+        return pd.read_sql(text(sql), conn, params=params)
 
 
 def run_tracked(job_name: str, job) -> int:

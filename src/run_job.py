@@ -8,12 +8,14 @@
     python src/run_job.py usage --loaded        every season that already has game logs
     python src/run_job.py tracking --limit 20   the next 20 game dates not fetched yet
     python src/run_job.py schedule --loaded     past schedules, for tip-off times and arenas
+    python src/run_job.py export                Parquet snapshot of the database for the app
 """
 import argparse
 import sys
 
 import config
 import db
+import export
 import player
 import player_game_logs
 import player_game_usage
@@ -24,8 +26,8 @@ import teams
 from seasons import select_seasons
 
 # Order matters for "all": players reference teams, game logs reference players,
-# and tracking takes its game dates from the game logs.
-JOB_ORDER = ["teams", "players", "schedule", "game_logs", "usage", "team_logs", "tracking"]
+# tracking takes its game dates from the game logs, and export snapshots everything last.
+JOB_ORDER = ["teams", "players", "schedule", "game_logs", "usage", "team_logs", "tracking", "export"]
 
 
 def main() -> int:
@@ -57,6 +59,7 @@ def main() -> int:
         "usage": lambda: player_game_usage.run(chosen_seasons()),
         "team_logs": lambda: team_game_logs.run(chosen_seasons()),
         "tracking": lambda: player_tracking.run(season=args.season, limit=args.limit),
+        "export": export.run,
     }
     failed = False
     for name in JOB_ORDER if args.job == "all" else [args.job]:

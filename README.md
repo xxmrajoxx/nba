@@ -6,7 +6,7 @@ A local data pipeline that pulls NBA data from [nba_api](https://github.com/swar
 
 Everything runs on your own machine: Python fetches the data, SQL Server stores it, and SQL views plus a small Python script do the analysis.
 
-New to the code? [ETL_GUIDE.md](ETL_GUIDE.md) explains how the pipeline works step by step, with diagrams. [ROADMAP.md](ROADMAP.md) covers what comes next.
+New to the code? [ETL_GUIDE.md](ETL_GUIDE.md) explains how the pipeline works step by step, with diagrams. [ROADMAP.md](ROADMAP.md) covers what comes next. The model has its own guide in [src/models/README.md](src/models/README.md), and the local app in [app/README.md](app/README.md).
 
 ## How it fits together
 
@@ -57,7 +57,8 @@ All jobs go through one command. Always use the virtual environment's Python:
 | `team_logs` | Loads team game logs (box score and advanced) | up to 4 per season |
 | `tracking` | Loads tracking (distance, speed), passing, touches, hustle stats and the starter flag for every game date in the game logs not fetched yet | 5 per game date |
 | `tracking --limit 20` | Only the next 20 game dates | 100 |
-| `all` | Every job above, in dependency order | |
+| `export` | Writes a Parquet snapshot of the tables and views the app uses to `data/`, so the app can run without SQL Server | 0 |
+| `all` | Every job above, in dependency order (export last) | |
 
 `schedule`, `game_logs`, `usage` and `team_logs` take the same season options: `--season 2024-25`, `--last N`, `--backfill`, or `--loaded` (every season that already has rows in `dbo.player_game_log`, handy for lining the other tables up with the game logs). With no option they load the current season.
 
@@ -205,6 +206,33 @@ Comparing a player's birthday-week games against their whole career would be mis
 | Teammates feed the birthday player | More volume: higher `usg_pct`, `pct_fga`, `pct_pts`, and more assisted baskets (`pct_ast_fgm`), mostly on the day itself | `birthday_phase = 'on'` |
 | He partied and is tired | Worse quality: lower `ts_pct`, fewer `minutes`, more `tov`, less `dist_miles` and `avg_speed`, fewer `deflections` and `contested_shots`, mostly in the next game or two | `birthday_phase = 'after'` |
 
+## The Birthday Explorer app
+
+A local website for browsing the data: pick a player, filter his games, and see how he plays around his birthday.
+
+```powershell
+.venv\Scripts\streamlit run app\app.py
+```
+
+Then open http://localhost:8501. Press Ctrl+C in the terminal to stop it.
+
+| Tab | Shows |
+|---|---|
+| Birthday effect | His average on each day within two weeks of his birthday, every game as a timeline (birthday games coloured), and averages by birthday phase |
+| Game log | Every game, with column groups (box score, shooting, advanced, usage, context, tracking), a birthday-week-only switch and CSV download |
+| Season by season | Birthday-week averages against the rest of each season |
+| Missed games | Games his team played without him, by birthday phase |
+| League | Upcoming birthday-week games for every player, and the biggest birthday-week scorers |
+| Pipeline | The last pipeline runs from `etl.job_run`, and a button to refresh the app's cache |
+
+A second page, **Today**, shows a date's games, the players whose birthday it is, and how each has played on past birthdays, year by year.
+
+The sidebar filters (season, season type, birthday phase, days from birthday, home/away, wins/losses) apply to the first four tabs.
+
+- **Built with [Streamlit](https://streamlit.io/)**: the whole site is Python in [app/app.py](app/app.py); every SQL query is in [app/queries.py](app/queries.py) and uses bind parameters.
+- **Only reachable from this computer**: [.streamlit/config.toml](.streamlit/config.toml) binds it to `localhost` and turns off Streamlit's usage statistics.
+- **Cached for 10 minutes**: after loading new data, use the button on the Pipeline tab to see it straight away.
+
 ## Design decisions
 
 **Tracking and hustle are fetched per game date, not per game.** They are only published per game through box score endpoints, which would mean about 21,000 requests for eight seasons. The league-wide tracking and hustle endpoints accept a one-day date range and return every player who played that day; because nobody plays twice in a day, that is the same per-game data in about 3,300 requests. The game id is then looked up from the game log.
@@ -226,12 +254,22 @@ Comparing a player's birthday-week games against their whole career would be mis
 ```
 nba/
 ├── requirements.txt
+├── app/
+│   ├── app.py                     the Birthday Explorer website (Streamlit): entry point and page list
+│   ├── player_explorer.py         page: one player in depth
+│   ├── today.py                   page: a date's games and birthdays
+│   ├── common.py                  colours and helpers shared by the pages
+│   ├── queries.py                 every SQL query the app runs
+│   └── model_results.py           reads the model results from outputs/
+├── .streamlit/config.toml         app settings: localhost only, no usage statistics
+├── data/                          Parquet snapshot for the app (export job), not committed yet
 ├── sql/
 │   ├── 01_schema.sql              tables, schemas, indexes
 │   ├── 02_views.sql               birthday-week views
 │   └── 03_derived_views.sql       pre-game context, absences, missed games, modelling view
 ├── src/
 │   ├── run_job.py                 command line entry point
+│   ├── export.py                  export job: Parquet snapshot for the app
 │   ├── config.py                  connection settings, API pacing, logging
 │   ├── db.py                      engine, init_db, upsert, job tracking
 │   ├── nba_client.py              paced, retrying wrapper around nba_api calls
@@ -243,11 +281,19 @@ nba/
 │   ├── player_game_usage.py       usage and scoring splits job
 │   ├── team_game_logs.py          team game logs job
 │   ├── player_tracking.py         tracking, passing, touches, hustle and starter job
-│   └── analysis.py                birthday-week analysis
+│   ├── analysis.py                birthday-week analysis
+│   └── models/                    statistical and ML models
+│       ├── run_models.py          runs every model; the app reads its outputs
+│       ├── data.py                loads games from v_player_game_features
+│       ├── outcomes.py            the stats tested and the controls
+│       ├── fixed_effects.py       shared regression code
+│       ├── event_study.py         performance on each day around the birthday
+│       └── phase_models.py        before/on/after, by age, chance of playing, per player
 ├── scripts/
 │   └── register_scheduled_task.ps1
-└── logs/
+├── logs/
     └── nba_pipeline.log           created on first run, not committed
+└── outputs/                       charts and results from the models, not committed
 ```
 
 To add a new table: add a `CREATE TABLE` (with an `updated_at` column) to `sql/01_schema.sql`, write a module with a `run()` function that builds a DataFrame and calls `db.upsert(df, "table", keys=[...])`, and register it in `JOB_ORDER` and `jobs` in `src/run_job.py`.

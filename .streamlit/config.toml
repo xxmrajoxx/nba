@@ -1,0 +1,16 @@
+[server]
+# Only this computer can open the app; nobody else on the network can reach it.
+address = "localhost"
+port = 8501
+headless = true
+
+[browser]
+# Don't send usage statistics to Streamlit.
+gatherUsageStats = false
+
+[theme]
+primaryColor = "#2a78d6"
+
+[client]
+# Hide the "Deploy" button; this app only runs locally.
+toolbarMode = "minimal"
