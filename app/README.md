@@ -142,10 +142,10 @@ Pick a date with the date box, step with **← Previous day** / **Next day →**
 
 | Section | What it shows |
 |---|---|
-| **Header cards** | Games scheduled, players with a birthday, and how many of them play that day |
-| **Games** | Every game that date: tip-off (US Eastern), teams, type (preseason, cup…), status ("Final" once played), arena, city, and which birthday players are in it. If there are no games, buttons jump to the nearest game days |
-| **Birthdays** | Every active player born on that day and month: team, the age he turns, and his game if his team plays |
-| **How they've played on past birthdays** | One panel per birthday player (open for those playing that day). Cards: birthday games, his average in them, his season averages, the difference. Chart: each birthday year, a dot per game (blue before, orange on, green after) against a grey line for his regular-season average that season. Table: every one of those games. Choose the stat, and **Birthday week** (3 days either side) or **On the birthday only** |
+| **Header cards** | Games scheduled, birthdays on the day, birthdays within 3 days either side, and how many of those players play that day |
+| **Games** | Every game that date: tip-off (US Eastern), teams, type (preseason, cup…), status ("Final" once played), arena, city, and which birthday players are in it (with "1 day ago" / "in 2 days" when the birthday isn't that day). If there are no games, buttons jump to the nearest game days |
+| **Birthdays within 3 days** | Every active player whose birthday is within 3 days either side of the date: team, birthday, **When** ("Today", "In 2 days", "1 day ago"), the age he turns, and his game if his team plays that day |
+| **How they've played on past birthdays** | One panel per birthday player (open for those playing that day). Cards: birthday games, his average in them, his season averages, the difference. Chart: each birthday year, a dot per game (blue before, orange on, green after) against a grey line for his regular-season average that season. Table: every one of those games with the day of the week, minutes, points, field goals and threes (made, attempted, %), rebounds, assists and true shooting. Choose the stat, and **4 days either side of the birthday** or **On the birthday only** |
 
 Things to know:
 

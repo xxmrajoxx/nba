@@ -6,7 +6,7 @@ A local data pipeline that pulls NBA data from [nba_api](https://github.com/swar
 
 Everything runs on your own machine: Python fetches the data, SQL Server stores it, and SQL views plus a small Python script do the analysis.
 
-New to the code? [ETL_GUIDE.md](ETL_GUIDE.md) explains how the pipeline works step by step, with diagrams. [ROADMAP.md](ROADMAP.md) covers what comes next. The model has its own guide in [src/models/README.md](src/models/README.md), and the local app in [app/README.md](app/README.md).
+New to the code? [ETL_GUIDE.md](ETL_GUIDE.md) explains how the pipeline works step by step, with diagrams. [ROADMAP.md](ROADMAP.md) covers what comes next, and [DATA_LOADS.md](DATA_LOADS.md) records what data is loaded and what to run next. The model has its own guide in [src/models/README.md](src/models/README.md), and the local app in [app/README.md](app/README.md).
 
 ## How it fits together
 

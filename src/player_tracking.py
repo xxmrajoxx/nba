@@ -1,4 +1,5 @@
 import logging
+from datetime import date, timedelta
 
 import pandas as pd
 from nba_api.stats.endpoints import LeagueDashPlayerStats, LeagueDashPtStats, LeagueHustleStatsPlayer
@@ -12,6 +13,9 @@ logger = logging.getLogger(__name__)
 DATASET = "tracking"
 FIRST_TRACKING_SEASON = "2013-14"
 FIRST_HUSTLE_SEASON = "2015-16"
+# The NBA publishes tracking stats a day or two after the games. A recent date that comes
+# back without them is retried on the next run instead of being marked as done.
+RECENT_DAYS = 7
 
 # Player tracking stat sets, by the API's pt_measure_type name.
 PT_MEASURES = {
@@ -129,8 +133,15 @@ def run(season: str = None, limit: int = None) -> int:
         df = df.merge(stats, on="player_id", how="left")
 
         rows = db.upsert(df, "player_game_tracking", keys=["player_id", "game_id"])
+        total += rows
+        not_published = df["dist_miles"].isna().all() and row.game_date >= date.today() - timedelta(days=RECENT_DAYS)
+        if not_published:
+            # Save what there is (hustle, starters) but leave the date pending, so the next
+            # run fetches it again once the tracking stats are out.
+            logger.warning(f"[{i}/{len(pending)}] {row.game_date}: tracking stats not published yet; "
+                           f"saved {rows} rows without them and will retry on the next run")
+            continue
         with db.get_engine().begin() as conn:
             conn.execute(mark_loaded, {"dataset": DATASET, "game_date": row.game_date, "rows": rows})
-        total += rows
         logger.info(f"[{i}/{len(pending)}] {row.game_date} {row.season_type}: {rows} rows")
     return total
