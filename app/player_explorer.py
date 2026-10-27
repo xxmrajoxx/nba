@@ -7,8 +7,8 @@ import streamlit as st
 
 import model_results
 import queries
-from common import (NEUTRAL, PHASE_ORDER, PHASES, SERIES, STATS, birthday_label,
-                    next_birthday, require_data)
+from common import (BACKGROUND, LOCAL_NAME, NEUTRAL, PHASE_ORDER, PHASES, SERIES, STATS, birthday_label,
+                    next_birthday, require_data, style_page, to_local)
 
 # Game log column groups, and fractions shown as percentages.
 LOG_GROUPS = {
@@ -36,7 +36,7 @@ LOG_LABELS = {
 MODEL_PHASES = {"before": "1-3 days before", "on": "On birthday", "after": "1-3 days after"}
 MODEL_PHASE_ORDER = list(MODEL_PHASES.values())
 AGE_GROUPS = ["Under 25", "25-29", "30+"]
-AGE_COLORS = ["#2a78d6", "#eb6834", "#1baf7a"]
+AGE_COLORS = ["#3987e5", "#d95926", "#199e70"]
 
 
 def zero_line():
@@ -67,7 +67,7 @@ def phase_interval_chart(data: pd.DataFrame, unit: str, by_age: bool = False):
     style = {} if by_age else {"color": SERIES}
     rules = alt.Chart(data).mark_rule(strokeWidth=2.5, opacity=0.5, **style).encode(
         x=x, y=alt.Y("ci_low:Q", title=y_title), y2="ci_high:Q", tooltip=tooltip, **extra)
-    dots = alt.Chart(data).mark_circle(size=120, opacity=1, stroke="white", strokeWidth=1.5, **style).encode(
+    dots = alt.Chart(data).mark_circle(size=120, opacity=1, stroke=BACKGROUND, strokeWidth=1.5, **style).encode(
         x=x, y="estimate:Q", tooltip=tooltip, **extra)
     return zero_line() + rules + dots
 
@@ -77,6 +77,7 @@ def format_interval(row) -> str:
 
 
 # ---------------------------------------------------------------- sidebar: player and filters
+style_page()
 st.sidebar.title("🏀 Birthday Explorer")
 require_data()
 players = queries.players()
@@ -95,6 +96,10 @@ if games.empty:
 
 games["phase_label"] = games["birthday_phase"].map(lambda p: PHASES[p][0])
 games["birthday_note"] = games["days_from_birthday"].map(birthday_label)
+local_tipoff = to_local(games["tipoff_et"]).set_axis(games.index)
+games["local_date"] = local_tipoff.dt.strftime("%Y-%m-%d")
+games["local_day"] = local_tipoff.dt.strftime("%a")
+games["local_label"] = local_tipoff.dt.strftime(f"%a %d %b %Y ({LOCAL_NAME})")
 
 st.sidebar.header("Filters")
 all_seasons = sorted(games["season"].unique())
@@ -192,7 +197,7 @@ with tab_effect:
     color = alt.Color("phase_label:N", title=None, sort=PHASE_ORDER,
                       scale=alt.Scale(domain=PHASE_ORDER, range=[c for _, c in PHASES.values()]),
                       legend=alt.Legend(orient="top"))
-    tooltip = [alt.Tooltip("game_date:T", title="Date", format="%d %b %Y"), alt.Tooltip("matchup:N", title="Game"),
+    tooltip = [alt.Tooltip("local_label:N", title="Date"), alt.Tooltip("matchup:N", title="Game"),
                alt.Tooltip("wl:N", title="Result"), alt.Tooltip("birthday_note:N", title="Birthday"),
                alt.Tooltip("value:Q", title=stat_label, format=".1f"), alt.Tooltip("minutes:Q", title="Minutes", format=".0f")]
     points = alt.Chart(timeline).mark_circle(size=45, opacity=0.85).encode(
@@ -248,7 +253,7 @@ with tab_effect:
                 alt.Chart(pd.DataFrame({"x": [0]})).mark_rule(color=NEUTRAL).encode(x="x:Q")
                 + alt.Chart(compare).mark_rule(strokeWidth=2.5, opacity=0.5, color=SERIES).encode(
                     y=y, x=alt.X("ci_low:Q", title=f"Birthday week vs nearby games ({r.unit})"), x2="ci_high:Q", tooltip=tip)
-                + alt.Chart(compare).mark_circle(size=140, opacity=1, color=SERIES, stroke="white", strokeWidth=1.5).encode(
+                + alt.Chart(compare).mark_circle(size=140, opacity=1, color=SERIES, stroke=BACKGROUND, strokeWidth=1.5).encode(
                     y=y, x="estimate:Q", tooltip=tip)
             )
             st.altair_chart(chart.properties(height=170), width="stretch")
@@ -321,7 +326,7 @@ with tab_model:
         day_chart = (band + zero_line()
                      + alt.Chart(days).mark_rule(strokeWidth=2.5, opacity=0.5, color=SERIES).encode(
                          x=x, y=alt.Y("ci_low:Q", title=f"vs his usual ({unit})"), y2="ci_high:Q", tooltip=tip)
-                     + alt.Chart(days).mark_circle(size=90, opacity=1, color=SERIES, stroke="white", strokeWidth=1.5).encode(
+                     + alt.Chart(days).mark_circle(size=90, opacity=1, color=SERIES, stroke=BACKGROUND, strokeWidth=1.5).encode(
                          x=x, y="estimate:Q", tooltip=tip))
         st.altair_chart(day_chart.properties(height=300), width="stretch")
         st.caption("One estimate per day, so each rests on fewer games and has a wider interval than the pooled chart above.")
@@ -349,11 +354,13 @@ with tab_log:
     groups = st.multiselect("Columns", list(LOG_GROUPS), default=["Box score", "Shooting"])
     birthday_only = st.toggle("Birthday week only")
     log = filtered[filtered["is_birthday_week"].astype(bool)] if birthday_only else filtered
-    columns = ["game_date", "season", "matchup", "wl", "birthday_note"] + [c for g in groups for c in LOG_GROUPS[g]]
+    columns = (["local_date", "local_day", "game_date", "season", "matchup", "wl", "birthday_note"]
+               + [c for g in groups for c in LOG_GROUPS[g]])
     table = log[columns].copy()
     for col in set(PCT_COLUMNS) & set(table.columns):
         table[col] = table[col] * 100
-    config = {"game_date": st.column_config.DateColumn("Date", format="YYYY-MM-DD"),
+    config = {"local_date": f"Date ({LOCAL_NAME})", "local_day": "Day",
+              "game_date": st.column_config.DateColumn("US date", format="YYYY-MM-DD"),
               "season": "Season", "matchup": "Game", "wl": "W/L", "birthday_note": "Birthday"}
     for col in table.columns:
         if col in PCT_COLUMNS:
@@ -365,6 +372,8 @@ with tab_log:
     st.dataframe(table, width="stretch", hide_index=True, column_config=config, height=520)
     st.download_button("Download as CSV", table.to_csv(index=False).encode("utf-8"),
                        file_name=f"{player['full_name'].replace(' ', '_').lower()}_games.csv", mime="text/csv")
+    st.caption(f"Date ({LOCAL_NAME}) is when the game happened in {LOCAL_NAME}. The NBA dates games by US time "
+               f"(US date), and the birthday analysis counts from that date.")
     if "Tracking" in groups:
         st.caption("Tracking columns stay empty until the tracking job has loaded those dates.")
 

@@ -38,7 +38,7 @@ GAME_COLUMNS = [
     "fgm", "fga", "fg_pct", "fg3m", "fg3a", "fg3_pct", "ftm", "fta", "ft_pct",
     "ts_pct", "efg_pct", "usg_pct", "off_rating", "def_rating", "net_rating", "pie",
     "pct_fga", "pct_pts", "pct_ast_fgm",
-    "days_rest", "back_to_back", "key_teammates_out", "top_scorer_out", "tipoff_hour_et", "arena_city",
+    "days_rest", "back_to_back", "key_teammates_out", "top_scorer_out", "tipoff_et", "tipoff_hour_et", "arena_city",
     "is_starter", "dist_miles", "avg_speed", "passes_received", "touches", "deflections",
 ]
 
@@ -71,6 +71,9 @@ def duckdb_connection():
         schema, table = path.stem.split(".", 1)
         con.execute(f"CREATE SCHEMA IF NOT EXISTS {schema}")
         con.execute(f"CREATE VIEW {schema}.{table} AS SELECT * FROM read_parquet('{path.as_posix()}')")
+    # v_player_game_birthday's columns are a subset of v_player_game_features, so the
+    # features file serves both instead of exporting the same games twice.
+    con.execute("CREATE VIEW IF NOT EXISTS dbo.v_player_game_birthday AS SELECT * FROM dbo.v_player_game_features")
     return con
 
 
@@ -168,15 +171,36 @@ def league_birthday_leaders(min_games: int) -> pd.DataFrame:
 
 @st.cache_data(ttl=CACHE_SECONDS)
 def games_on(day: date) -> pd.DataFrame:
-    """Every game scheduled on one date (US date, as the NBA schedule uses)."""
+    """Every game scheduled on one date (US date, as the NBA schedule uses), with the final
+    score once the team game logs for it are loaded."""
     df = run_query("""
-        SELECT game_id, game_date, game_datetime_est, game_label, game_sub_label, game_status_text,
-               arena_name, arena_city, arena_state, away_team_tricode, home_team_tricode
-        FROM dbo.schedule
-        WHERE game_date = :day
-        ORDER BY game_datetime_est, game_id
+        SELECT s.game_id, s.season, s.game_date, s.game_datetime_est, s.game_label, s.game_sub_label,
+               s.game_status_text, s.arena_name, s.arena_city, s.arena_state,
+               s.away_team_tricode, s.home_team_tricode, a.pts AS away_pts, h.pts AS home_pts
+        FROM dbo.schedule AS s
+        LEFT JOIN dbo.team_game_log AS a ON a.game_id = s.game_id AND a.team_id = s.away_team_id
+        LEFT JOIN dbo.team_game_log AS h ON h.game_id = s.game_id AND h.team_id = s.home_team_id
+        WHERE s.game_date = :day
+        ORDER BY s.game_datetime_est, s.game_id
     """, {"day": day})
     df["game_datetime_est"] = pd.to_datetime(df["game_datetime_est"])
+    return df
+
+
+@st.cache_data(ttl=CACHE_SECONDS)
+def season_games(season: str) -> pd.DataFrame:
+    """Every loaded game of one season, box score only. Reads v_player_game_birthday rather
+    than the modelling view: a whole season from the modelling view takes nearly a minute
+    on SQL Server, this takes under a second."""
+    df = run_query("""
+        SELECT b.player_id, b.game_id, b.game_date, b.season_type, b.matchup, b.wl, b.days_from_birthday,
+               b.minutes, b.pts, b.reb, b.ast, b.stl, b.blk, b.tov, b.fgm, b.fga, b.fg_pct, b.fg3m, b.fg3a,
+               b.fg3_pct, b.ftm, b.fta, b.ts_pct, b.plus_minus, s.game_datetime_est AS tipoff_et
+        FROM dbo.v_player_game_birthday AS b
+        LEFT JOIN dbo.schedule AS s ON s.game_id = b.game_id
+        WHERE b.season = :season
+    """, {"season": season})
+    df["game_date"] = pd.to_datetime(df["game_date"])
     return df
 
 

@@ -33,12 +33,27 @@ OUTPUT_COLUMNS = (
 
 def get_league_game_logs(season: str, season_type: str, measure_type: str) -> pd.DataFrame:
     # Leaving the player id out returns every player's games for the season in one request.
-    return fetch(
+    df = fetch(
         PlayerGameLogs,
         season_nullable=season,
         season_type_nullable=season_type,
         measure_type_player_game_logs_nullable=measure_type,
     ).player_game_logs.get_data_frame()
+    return drop_duplicate_games(df)
+
+
+def drop_duplicate_games(df: pd.DataFrame) -> pd.DataFrame:
+    """Keep one row per player per game.
+
+    The NBA occasionally credits a player to both teams in a game: Devin Booker played 34
+    minutes for PHX at OKC on 26 Oct 2026 but also appears for OKC with 0 minutes and 1 point.
+    The row with the most minutes is the one where he actually played.
+    """
+    duplicated = df.sort_values("MIN", ascending=False).duplicated(KEY_COLUMNS)
+    for row in df[duplicated.reindex(df.index)].itertuples():
+        logger.warning(f"Dropping duplicate game log: {row.PLAYER_NAME} ({row.PLAYER_ID}) "
+                       f"for {row.TEAM_ABBREVIATION} in game {row.GAME_ID}, {row.MIN} min")
+    return df[~duplicated.reindex(df.index)]
 
 
 def tidy_game_logs(df: pd.DataFrame, season_type: str) -> pd.DataFrame:

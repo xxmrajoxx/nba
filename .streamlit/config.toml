@@ -9,7 +9,17 @@ headless = true
 gatherUsageStats = false
 
 [theme]
-primaryColor = "#2a78d6"
+# Dark theme. Colours are the reference data-viz palette's dark-mode steps.
+base = "dark"
+primaryColor = "#3987e5"
+backgroundColor = "#0a0a0a"
+secondaryBackgroundColor = "#161615"
+textColor = "#f0efec"
+borderColor = "#2e2e2c"
+dataframeBorderColor = "#2e2e2c"
+dataframeHeaderBackgroundColor = "#161615"
+showWidgetBorder = true
+chartCategoricalColors = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"]
 
 [client]
 # Hide the "Deploy" button; this app only runs locally.

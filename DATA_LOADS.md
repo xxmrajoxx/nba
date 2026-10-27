@@ -2,7 +2,7 @@
 
 A record of which data has been loaded into the `nba` database, what is missing, and the commands to run next. **Update the "Last checked" date, the coverage tables and the load log after every load.** The [coverage queries](#check-coverage-yourself) at the bottom produce every number on this page.
 
-**Last checked: 25 October 2026, 21:20 (Sydney time).**
+**Last checked: 26 October 2026, 21:25 (Sydney time).**
 
 ## Contents
 
@@ -21,16 +21,18 @@ A record of which data has been loaded into the `nba` database, what is missing,
 | Table | Loaded | Last loaded |
 |---|---|---|
 | `dbo.team` | All 30 teams | 11 Oct 2026 |
-| `dbo.player` | 622 players, 519 active, all with birthdates | 25 Oct 2026 |
-| `dbo.schedule` | 2017-18 to 2024-25, and 2026-27 (full season schedule) | 25 Oct 2026 |
-| `dbo.player_game_log` | 2017-18 to 2024-25 (regular season + playoffs), 2026-27 to **24 Oct 2026** | 25 Oct 2026 |
-| `dbo.player_game_usage` | Same as the game log (one row per game-log row) | 25 Oct 2026 |
-| `dbo.team_game_log` | Same seasons as the game log | 25 Oct 2026 |
-| `dbo.player_game_tracking` | **Barely started:** 3 test dates in 2017-18, and 2026-27 to 24 Oct 2026 | 25 Oct 2026 |
+| `dbo.player` | 622 players, 521 active, all with birthdates | 26 Oct 2026 |
+| `dbo.schedule` | 2017-18 to 2024-25, and 2026-27 (full season schedule) | 26 Oct 2026 |
+| `dbo.player_game_log` | 2017-18 to 2024-25 (regular season + playoffs), 2026-27 to **25 Oct 2026** (US date) | 26 Oct 2026 |
+| `dbo.player_game_usage` | Same as the game log (one row per game-log row) | 26 Oct 2026 |
+| `dbo.team_game_log` | Same seasons as the game log | 26 Oct 2026 |
+| `dbo.player_game_tracking` | **Barely started:** 3 test dates in 2017-18, and 2026-27 to 25 Oct 2026 (distance, passing and touches to 24 Oct) | 26 Oct 2026 |
 
 **Missing entirely:** the **2025-26** season (every table), preseason games (any season), and tracking for 2017-18 to 2024-25.
 
 Times in `etl.job_run` are UTC, 11 hours behind Sydney (AEDT): a job finishing at 21:15 Sydney time shows as 10:15.
+
+**Dates are US dates.** The NBA schedule dates games by US time, so "last night's games" in Sydney are the previous US date's games.
 
 ---
 
@@ -49,7 +51,7 @@ Times in `etl.job_run` are UTC, 11 hours behind Sydney (AEDT): a job finishing a
 | 2023-24 | 19,014 rows, 1,230 games | 1,357 rows, 82 games | 24 Oct 2023 | 17 Jun 2024 |
 | 2024-25 | 21,545 rows, 1,230 games | 1,682 rows, 84 games | 22 Oct 2024 | 22 Jun 2025 |
 | **2025-26** | **not loaded** | **not loaded** | | |
-| 2026-27 | 812 rows, 36 games | (not started) | 20 Oct 2026 | **24 Oct 2026** |
+| 2026-27 | 969 rows, 43 games | (not started) | 20 Oct 2026 | **25 Oct 2026** |
 
 Rows are player-games for **players in `dbo.player`** (today's active players plus anyone previously loaded), not every player in the league. Older seasons therefore have fewer rows: only the players still around today. 2019-20 and 2020-21 have fewer games because of COVID-shortened seasons.
 
@@ -66,7 +68,7 @@ Rows are player-games for **players in `dbo.player`** (today's active players pl
 | 2023-24 | 20,371 | 20,371 | 2,624 | 1,396 | 0 | 0 of 204 |
 | 2024-25 | 23,227 | 23,227 | 2,628 | 1,400 | 0 | 0 of 210 |
 | 2025-26 | | | | | | |
-| 2026-27 | 812 | 812 | 72 | 1,274 (whole season) | 812 | 3 of 5 |
+| 2026-27 | 969 | 969 | 86 | 1,274 (whole season) | 969 | 5 of 6 |
 
 Usage rows should always equal game log rows. Team rows are 2 per game across all teams, so they don't depend on `dbo.player`.
 
@@ -80,8 +82,9 @@ Usage rows should always equal game log rows. Team rows are 2 per game across al
 | 20 Oct 2026 | 68 | |
 | 21 Oct 2026 | 254 | |
 | 22 Oct 2026 | 45 | |
-| 23 Oct 2026 | (pending) | Hustle and starters saved; distance, passing and touches not published by the NBA yet |
-| 24 Oct 2026 | (pending) | Same |
+| 23 Oct 2026 | 275 | Loaded 26 Oct, once the NBA had published them |
+| 24 Oct 2026 | 170 | Loaded 26 Oct |
+| 25 Oct 2026 | (pending) | Hustle and starters saved (157 rows); distance, passing and touches not published yet |
 
 ---
 
@@ -91,7 +94,7 @@ In priority order.
 
 | Gap | Why it matters | Command | Time |
 |---|---|---|---|
-| **Tracking for 23-24 Oct 2026** | Distance, passing and touches missing for 445 rows | `run_job.py tracking --season 2026-27` (retries automatically) | Under a minute |
+| **Tracking for 25 Oct 2026** | Distance, passing and touches missing for 157 rows until the NBA publishes them (a day or two after the games) | `run_job.py tracking --season 2026-27` (retries automatically) | Under a minute |
 | **2025-26 season** | The most recent full season; more birthday games for the models; the Today page shows no games on 2025-26 dates | See [Load 2025-26](#load-the-2025-26-season) | A few minutes |
 | **Tracking 2017-18 to 2024-25** | Needed to model the "tired" stats (distance, speed, hustle) and passes received / touches | `run_job.py tracking` | About 2-2.5 hours, resumable |
 | **Preseason** | October birthdays (e.g. Josh Giddey, 10 Oct) only ever fall in the preseason | Needs a code change: add `"Pre Season"` to `SEASON_TYPES` in `src/config.py` | |
@@ -117,8 +120,8 @@ In priority order.
 
 | Copy | Last refreshed | Covers | Refresh with |
 |---|---|---|---|
-| Parquet snapshot for the app (`data/`) | 25 Oct 2026, 21:18 | Tables as of then (to 24 Oct 2026) | `run_job.py export` |
-| Model results (`outputs/`) | 25 Oct 2026, 21:19 | 105,469 regular-season games, 503 players, 2017-18 to 2026-27 | `src\models\run_models.py` |
+| Parquet snapshot for the app (`data/`) | 26 Oct 2026, 21:23 | Tables as of then (to 25 Oct 2026) | `run_job.py export` |
+| Model results (`outputs/`) | 26 Oct 2026, 21:24 | 105,626 regular-season games, 509 players, 2017-18 to 2026-27 | `src\models\run_models.py` |
 
 The exact times are in `data/manifest.json` and `outputs/model_info.json`.
 
@@ -130,6 +133,7 @@ Newest first. Add a row for every load.
 
 | Date (Sydney) | What was run | Result |
 |---|---|---|
+| 26 Oct 2026 | `players`, `schedule`, `game_logs`, `usage`, `team_logs`, `tracking`, all `--season 2026-27`; then `export` and `run_models.py` | Loaded 25 Oct (US date): 7 games, 157 player rows. Season total 43 games, 969 player rows, none of the 43 played games missing. Tracking for 23-24 Oct completed (published since); 25 Oct pending. Active players 519 to 521. Models: still no significant birthday effect |
 | 25 Oct 2026 | `players`, `schedule`, `game_logs`, `usage`, `team_logs`, `tracking`, all `--season 2026-27`; then `export` and `run_models.py` | 2026-27 opening week loaded: 36 games, 812 player rows (20-24 Oct). Active players 622 → 519 after roster cuts. Tracking for 23-24 Oct not published yet; fixed the tracking job so those dates retry |
 | 18 Oct 2026 | `schedule --loaded`; `tracking --limit 3` (after adding passing, touches and starters) | Past schedules for 2017-18 to 2024-25 (10,737 games). Tracking re-tested on 3 dates |
 | 11-14 Oct 2026 | `game_logs` for 2017-18 to 2024-25 (reloaded by hand), `usage --loaded`, `team_logs --loaded` | 8 seasons of game logs (112,850 rows), usage and team logs to match |

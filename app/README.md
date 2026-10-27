@@ -140,20 +140,33 @@ The filters apply to the header cards and the Birthday effect, Game log, Season 
 
 Pick a date with the date box, step with **← Previous day** / **Next day →**, or jump back with **Today**.
 
+From top to bottom:
+
 | Section | What it shows |
 |---|---|
-| **Header cards** | Games scheduled, birthdays on the day, birthdays within 3 days either side, and how many of those players play that day |
-| **Games** | Every game that date: tip-off (US Eastern), teams, type (preseason, cup…), status ("Final" once played), arena, city, and which birthday players are in it (with "1 day ago" / "in 2 days" when the birthday isn't that day). If there are no games, buttons jump to the nearest game days |
-| **Birthdays within 3 days** | Every active player whose birthday is within 3 days either side of the date: team, birthday, **When** ("Today", "In 2 days", "1 day ago"), the age he turns, and his game if his team plays that day |
-| **How they've played on past birthdays** | One panel per birthday player (open for those playing that day). Cards: birthday games, his average in them, his season averages, the difference. Chart: each birthday year, a dot per game (blue before, orange on, green after) against a grey line for his regular-season average that season. Table: every one of those games with the day of the week, minutes, points, field goals and threes (made, attempted, %), rebounds, assists and true shooting. Choose the stat, and **4 days either side of the birthday** or **On the birthday only** |
+| **Header cards** | Games scheduled, birthdays on the day, birthdays within 3 days either side, and how many of those players are in action that day |
+| **Games** and **Birthdays within 3 days** (side by side) | Left: every game that date with tip-off (US Eastern), teams, **final score** once the game is loaded, status, and which birthday players are in it. Right: every active player whose birthday is within 3 days either side, with his birthday, **When** ("Today", "In 2 days", "1 day ago"), the age he turns and his game. **Highlighted rows** (orange tint) are birthday players whose team plays that day. If there are no games, buttons jump to the nearest game days |
+| **This season so far** | The birthday players' per-game averages for the date's season, up to that date (games, minutes, points, rebounds, assists, threes made and attempted, 3P %, FG %, last game), with players in action highlighted. Beside it, a bar chart ranks them by any stat (pick it above the chart); orange bars play that day |
+| **Birthday players** | One collapsible panel per player, players in action first. Controls: **Stats to chart** (pick any number), **All stats**, **4 days either side of the birthday** or **On the birthday only**, **Only players in action on this day**, and **Expand all** / **Collapse all** |
+
+Inside each player's panel:
+
+| Tab | What it shows |
+|---|---|
+| **This season** | A card per chosen stat (his per-game average), a bar chart per stat for every game this season (orange = around his birthday) with a dashed line for his average, and his game log for the season: date, day of the week, minutes, points, field goals and threes (made, attempted, %), rebounds, assists, steals, blocks, turnovers, plus/minus and true shooting |
+| **Past birthdays** | A table comparing each chosen stat in his birthday games with his season averages, a chart per stat (each birthday year: a dot per game, blue before, orange on the day, green after, against a grey line for his season average), and every one of those games, with his birthday games highlighted |
+
+**Panels load their data only when opened**, so the page stays quick on dates with 20 birthday players. By default the panels of players in action on their actual birthday are open (or the first panel if there are none).
 
 Things to know:
 
-- **Dates are US dates**, as the NBA schedule uses them. From Australia, a US Monday-night game is Tuesday for you.
+- **Two dates for every game.** The NBA dates games by US time, so a Saturday-night game in Atlanta is Sunday morning in Sydney. Game logs show **Date (Sydney)**, the day and the Sydney tip-off time first, with the **US date** alongside; the games table shows the tip-off in both. The page's date picker is the NBA's (US) date, and the line under the title says which day those games fall on in Sydney. To use another time zone, change `LOCAL_TZ` and `LOCAL_NAME` in [common.py](common.py).
+- **The birthday analysis counts from the US date**, the day the game was played where it was played. So a game the night before a player's birthday (US time) is "1 day before", even though in Sydney it was already his birthday.
 - **Teams are today's rosters.** On a past date, a player traded since then shows with his current team.
 - **29 February birthdays** show on 28 February in non-leap years.
 - **No games on a date in 2025-26?** That season's schedule isn't loaded yet: `run_job.py schedule --season 2025-26`.
 - **"No games this close to his birthday"** is normal for summer birthdays (off-season) and early-to-mid October ones (preseason, not loaded).
+- **Scores and "This season" need the game logs loaded** for that date. Today's games show their tip-off time until you load them the next day.
 
 ## How it works
 
@@ -224,6 +237,10 @@ After loading new data with the pipeline, either wait 10 minutes or press **Clea
    Each condition gives True/False per game; `&` combines them; `games[mask]` keeps the True rows.
 5. **Draw the header**, including the countdown from `next_birthday()`. It handles 29 February birthdays by using 28 February in non-leap years.
 6. **Draw the tabs.** Each tab is a `with tab_name:` block; everything inside it appears in that tab.
+
+### The dark theme
+
+The colours are set once in [../.streamlit/config.toml](../.streamlit/config.toml) (`[theme]`, `base = "dark"`) and apply to every page, table and chart. The chart colours in [common.py](common.py) are the data-viz palette's dark-mode steps, chosen for dark backgrounds. `style_page()` in `common.py` adds a little CSS: metric cards and section rules. To go back to a light theme, set `base = "light"` and remove the colour lines below it.
 
 ### Charts
 
