@@ -66,6 +66,10 @@ PAGE_CSS = """
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
+/* Smaller cards in the sidebar, where they sit two to a row */
+[data-testid="stSidebar"] [data-testid="stMetric"] { padding: 10px 12px; }
+[data-testid="stSidebar"] [data-testid="stMetricLabel"] p { font-size: 0.68rem; letter-spacing: 0.02em; }
+[data-testid="stSidebar"] [data-testid="stMetricValue"] { font-size: 1.6rem; }
 /* Section headings with a quiet rule underneath */
 h3 { border-bottom: 1px solid #2e2e2c; padding-bottom: 0.35rem; }
 </style>

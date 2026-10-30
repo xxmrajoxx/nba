@@ -205,6 +205,27 @@ def season_games(season: str) -> pd.DataFrame:
 
 
 @st.cache_data(ttl=CACHE_SECONDS)
+def teams() -> pd.DataFrame:
+    return run_query("SELECT team_id, abbreviation, full_name FROM dbo.team ORDER BY full_name")
+
+
+@st.cache_data(ttl=CACHE_SECONDS)
+def team_season_games(season: str) -> pd.DataFrame:
+    """Every team's regular-season games in one season, each with the opponent's points and
+    possessions alongside (for points allowed and the defensive rating)."""
+    df = run_query("""
+        SELECT t.team_id, t.game_id, t.game_date, t.is_home, t.wl, t.pts, t.fgm, t.fga, t.fg3m, t.fg3a,
+               t.ftm, t.fta, t.oreb, t.dreb, t.reb, t.ast, t.stl, t.blk, t.tov, t.pf, t.pace, t.poss,
+               o.pts AS opp_pts, o.poss AS opp_poss
+        FROM dbo.team_game_log AS t
+        JOIN dbo.team_game_log AS o ON o.game_id = t.game_id AND o.team_id <> t.team_id
+        WHERE t.season = :season AND t.season_type = 'Regular Season'
+    """, {"season": season})
+    df["game_date"] = pd.to_datetime(df["game_date"])
+    return df
+
+
+@st.cache_data(ttl=CACHE_SECONDS)
 def nearest_game_dates(day: date) -> pd.DataFrame:
     """The closest dates before and after `day` that have games, for when `day` has none."""
     return run_query("""

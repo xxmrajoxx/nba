@@ -9,6 +9,7 @@ import streamlit as st
 import queries
 from common import (BACKGROUND, HIGHLIGHT, LOCAL_NAME, NEUTRAL, PHASES, STATS, birthday_label, birthday_on,
                     require_data, style_page, to_local)
+from team_stats import show_team_stats
 
 DAY_KEY = "today_page_day"
 BIRTHDAY_WINDOW = 3     # players whose birthday is this many days either side of the chosen date
@@ -131,6 +132,7 @@ day = st.session_state[DAY_KEY]
 players = queries.players()
 games = queries.games_on(day)
 season = games["season"].iloc[0] if not games.empty else season_of(day)
+show_team_stats(season, day, games)
 
 
 def nearest_birthday(birthdate: date) -> date:

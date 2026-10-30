@@ -140,7 +140,18 @@ The filters apply to the header cards and the Birthday effect, Game log, Season 
 
 Pick a date with the date box, step with **← Previous day** / **Next day →**, or jump back with **Today**.
 
-From top to bottom:
+**Team stats (in the sidebar).** Pick a team; teams playing on the chosen date are listed first, marked 🏀. For the date's season, regular season only, up to and including that date:
+
+| Part | What it shows |
+|---|---|
+| **Plays on this day** | Its game that date, with the score once loaded (only if it plays) |
+| **Cards** | Record, net rating, offensive rating and defensive rating, each with its league rank ("3rd of 30"). Hover the ? for what each means |
+| **Record line** | Home and away records, last 10 games, current streak (W3 = three wins in a row) |
+| **Table** | Per game, season total and league rank for points, points allowed, shots (FGA/FGM), FG %, threes (3PM/3PA), 3P %, free throws, FT %, rebounds (total, offensive, defensive), assists, steals, blocks, turnovers, fouls and pace |
+
+Ranks: 1 = best, which means the most of a stat, except the fewest points allowed, turnovers and fouls, and the lowest defensive rating. Counting stats rank on the per-game average, so teams that have played more games don't rank higher just for that. The ratings are points scored (offence) or allowed (defence) per 100 possessions over the whole season, the way NBA.com works them out: checked against NBA.com for 2025-26, they agree to within 0.05 and every team's rank matches. Early in a season the ranks move a lot, because they rest on a handful of games.
+
+From top to bottom of the page:
 
 | Section | What it shows |
 |---|---|
@@ -164,7 +175,6 @@ Things to know:
 - **The birthday analysis counts from the US date**, the day the game was played where it was played. So a game the night before a player's birthday (US time) is "1 day before", even though in Sydney it was already his birthday.
 - **Teams are today's rosters.** On a past date, a player traded since then shows with his current team.
 - **29 February birthdays** show on 28 February in non-leap years.
-- **No games on a date in 2025-26?** That season's schedule isn't loaded yet: `run_job.py schedule --season 2025-26`.
 - **"No games this close to his birthday"** is normal for summer birthdays (off-season) and early-to-mid October ones (preseason, not loaded).
 - **Scores and "This season" need the game logs loaded** for that date. Today's games show their tip-off time until you load them the next day.
 
@@ -264,8 +274,9 @@ Colours follow the project's data-viz palette: one blue for single-series charts
 | [app.py](app.py) | The entry point and router: page settings, and the list of pages (`st.navigation`). Still the file you run |
 | [player_explorer.py](player_explorer.py) | The Player explorer page: helper functions, the sidebar, the header, and one block per tab |
 | [today.py](today.py) | The Today page |
+| [team_stats.py](team_stats.py) | The Today page's **Team stats** sidebar: `league_table()` turns every team's game logs into season totals, ratings and records, and `show_team_stats()` draws the team picker, cards and table. Its data is `dbo.team_game_log`, already loaded daily, so it needs no extra NBA API calls |
 | [common.py](common.py) | Shared by both pages: colours, the stat list, birthday helpers, and the data-source check |
-| [queries.py](queries.py) | Every SQL query the app runs, each a cached function: `players()`, `player_games()`, `player_seasons()`, `player_missed_games()`, `upcoming_birthday_games()`, `league_birthday_leaders()`, `pipeline_status()` |
+| [queries.py](queries.py) | Every SQL query the app runs, each a cached function: `players()`, `player_games()`, `player_seasons()`, `player_missed_games()`, `upcoming_birthday_games()`, `league_birthday_leaders()`, `games_on()`, `season_games()`, `teams()`, `team_season_games()`, `nearest_game_dates()`, `pipeline_status()` |
 | [../src/export.py](../src/export.py) | The `export` job: writes the Parquet snapshot to `data/` |
 | [model_results.py](model_results.py) | Reads the model results from `outputs/`. The cache is keyed on the files' modification time, so re-running the models shows up on the next page reload |
 | [../.streamlit/config.toml](../.streamlit/config.toml) | App settings: address, port, theme colour, toolbar |
