@@ -41,6 +41,29 @@ GAME_COLUMNS = [
     "days_rest", "back_to_back", "key_teammates_out", "top_scorer_out", "tipoff_et", "tipoff_hour_et", "arena_city",
     "is_starter", "dist_miles", "avg_speed", "passes_received", "touches", "deflections",
 ]
+# Every stat column of the three player tables, for the Game logs page.
+LOG_STATS = [
+    "minutes", "pts", "fgm", "fga", "fg_pct", "fg3m", "fg3a", "fg3_pct", "ftm", "fta", "ft_pct",
+    "oreb", "dreb", "reb", "ast", "tov", "stl", "blk", "pf", "plus_minus",
+    "off_rating", "def_rating", "net_rating", "ast_pct", "ast_to", "ast_ratio", "oreb_pct", "dreb_pct", "reb_pct",
+    "tm_tov_pct", "efg_pct", "ts_pct", "usg_pct", "pace", "pie", "poss",
+]
+USAGE_STATS = [
+    "pct_fgm", "pct_fga", "pct_fg3m", "pct_fg3a", "pct_ftm", "pct_fta", "pct_oreb", "pct_dreb", "pct_reb",
+    "pct_ast", "pct_tov", "pct_stl", "pct_blk", "pct_pf", "pct_pts",
+    "pct_fga_2pt", "pct_fga_3pt", "pct_pts_2pt", "pct_pts_2pt_mr", "pct_pts_3pt", "pct_pts_fb", "pct_pts_ft",
+    "pct_pts_off_tov", "pct_pts_paint", "pct_ast_2pm", "pct_uast_2pm", "pct_ast_3pm", "pct_uast_3pm",
+    "pct_ast_fgm", "pct_uast_fgm",
+]
+TRACKING_STATS = [
+    "dist_miles", "dist_miles_off", "dist_miles_def", "avg_speed", "avg_speed_off", "avg_speed_def",
+    "passes_made", "passes_received", "ft_ast", "secondary_ast", "potential_ast", "ast_pts_created",
+    "touches", "front_ct_touches", "time_of_poss", "avg_sec_per_touch", "avg_drib_per_touch", "pts_per_touch",
+    "elbow_touches", "post_touches", "paint_touches",
+    "contested_shots", "contested_shots_2pt", "contested_shots_3pt", "deflections", "charges_drawn",
+    "screen_assists", "screen_ast_pts", "loose_balls_recovered", "off_loose_balls_recovered",
+    "def_loose_balls_recovered", "box_outs", "off_boxouts", "def_boxouts",
+]
 
 
 # ---------------------------------------------------------------- choosing and using a source
@@ -71,9 +94,11 @@ def duckdb_connection():
         schema, table = path.stem.split(".", 1)
         con.execute(f"CREATE SCHEMA IF NOT EXISTS {schema}")
         con.execute(f"CREATE VIEW {schema}.{table} AS SELECT * FROM read_parquet('{path.as_posix()}')")
-    # v_player_game_birthday's columns are a subset of v_player_game_features, so the
-    # features file serves both instead of exporting the same games twice.
+    # v_player_game_birthday's columns are a subset of v_player_game_features, and so are
+    # player_game_log's, so the features file serves all three instead of exporting the same
+    # games three times.
     con.execute("CREATE VIEW IF NOT EXISTS dbo.v_player_game_birthday AS SELECT * FROM dbo.v_player_game_features")
+    con.execute("CREATE VIEW IF NOT EXISTS dbo.player_game_log AS SELECT * FROM dbo.v_player_game_features")
     return con
 
 
@@ -119,6 +144,36 @@ def player_games(player_id: int) -> pd.DataFrame:
     )
     df["game_date"] = pd.to_datetime(df["game_date"])
     return df.sort_values("game_date", ascending=False).reset_index(drop=True)
+
+
+@st.cache_data(ttl=CACHE_SECONDS)
+def player_game_logs(player_id: int) -> pd.DataFrame:
+    """Every game one player has played, with every stat column of the game log, usage and
+    tracking tables, the final score and the tip-off time. Reads the tables rather than the
+    modelling view, which leaves some of their columns out. Tracking columns are empty for
+    games the tracking job hasn't loaded."""
+    columns = (
+        [f"l.{c}" for c in ["game_id", "game_date", "season", "season_type", "team_id", "team_abbreviation",
+                            "opponent_abbreviation", "is_home", "matchup", "wl"] + LOG_STATS]
+        + [f"u.{c}" for c in USAGE_STATS]
+        + [f"t.{c}" for c in ["is_starter"] + TRACKING_STATS]
+    )
+    df = run_query(f"""
+        SELECT {', '.join(columns)}, tm.pts AS team_pts, op.pts AS opp_pts, s.game_datetime_est AS tipoff_et
+        FROM dbo.player_game_log AS l
+        LEFT JOIN dbo.player_game_usage AS u ON u.player_id = l.player_id AND u.game_id = l.game_id
+        LEFT JOIN dbo.player_game_tracking AS t ON t.player_id = l.player_id AND t.game_id = l.game_id
+        LEFT JOIN dbo.team_game_log AS tm ON tm.game_id = l.game_id AND tm.team_id = l.team_id
+        LEFT JOIN dbo.team_game_log AS op ON op.game_id = l.game_id AND op.team_id <> l.team_id
+        LEFT JOIN dbo.schedule AS s ON s.game_id = l.game_id
+        WHERE l.player_id = :player_id
+    """, {"player_id": player_id})
+    df["game_date"] = pd.to_datetime(df["game_date"])
+    # A column that is NULL in every game (tracking before it was loaded) comes back as
+    # Python None objects; make every stat a number so averages and charts work on it.
+    stats = LOG_STATS + USAGE_STATS + TRACKING_STATS
+    df[stats] = df[stats].apply(pd.to_numeric)
+    return df.sort_values("game_date").reset_index(drop=True)
 
 
 @st.cache_data(ttl=CACHE_SECONDS)
@@ -214,9 +269,9 @@ def team_season_games(season: str) -> pd.DataFrame:
     """Every team's regular-season games in one season, each with the opponent's points and
     possessions alongside (for points allowed and the defensive rating)."""
     df = run_query("""
-        SELECT t.team_id, t.game_id, t.game_date, t.is_home, t.wl, t.pts, t.fgm, t.fga, t.fg3m, t.fg3a,
+        SELECT t.team_id, t.game_id, t.game_date, t.matchup, t.is_home, t.wl, t.pts, t.fgm, t.fga, t.fg3m, t.fg3a,
                t.ftm, t.fta, t.oreb, t.dreb, t.reb, t.ast, t.stl, t.blk, t.tov, t.pf, t.pace, t.poss,
-               o.pts AS opp_pts, o.poss AS opp_poss
+               t.off_rating, t.def_rating, t.net_rating, o.pts AS opp_pts, o.poss AS opp_poss
         FROM dbo.team_game_log AS t
         JOIN dbo.team_game_log AS o ON o.game_id = t.game_id AND o.team_id <> t.team_id
         WHERE t.season = :season AND t.season_type = 'Regular Season'

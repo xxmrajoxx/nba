@@ -84,19 +84,25 @@ def streak(results: list) -> str:
     return f"{last}{count}"
 
 
-def show_team_stats(season: str, day: date, games_today: pd.DataFrame) -> None:
-    """The sidebar section: pick a team and see its season up to `day`, ranked against the league."""
+def show_team_stats(season: str, day: date, games_today: pd.DataFrame = None, key: str = TEAM_KEY,
+                    default_team: str = None) -> str:
+    """The sidebar section: pick a team and see its season up to `day`, ranked against the league.
+    Teams in `games_today` (the games on `day`) are listed first; otherwise `default_team` is
+    picked to start with. Returns the chosen team's abbreviation."""
     teams = queries.teams()
     names = dict(zip(teams["abbreviation"], teams["full_name"]))
     team_ids = dict(zip(teams["abbreviation"], teams["team_id"]))
+    if games_today is None:
+        games_today = pd.DataFrame()
     playing = [t for g in games_today.itertuples() for t in (g.away_team_tricode, g.home_team_tricode) if t in names]
-    others = [t for t in teams["abbreviation"] if t not in playing]
+    options = playing + [t for t in teams["abbreviation"] if t not in playing]
 
     sidebar = st.sidebar
     sidebar.subheader("Team stats")
-    abbr = sidebar.selectbox("Team", playing + others, key=TEAM_KEY,
+    abbr = sidebar.selectbox("Team", options, key=key,
+                             index=options.index(default_team) if default_team in options else 0,
                              format_func=lambda t: ("🏀 " if t in playing else "") + names[t],
-                             help="🏀 = plays on this day. Those teams are listed first.")
+                             help="🏀 = plays on this day. Those teams are listed first." if playing else None)
     for g in games_today.itertuples():
         if abbr in (g.away_team_tricode, g.home_team_tricode):
             score = f" {int(g.away_pts)}–{int(g.home_pts)}," if pd.notna(g.away_pts) and pd.notna(g.home_pts) else ""
@@ -108,7 +114,7 @@ def show_team_stats(season: str, day: date, games_today: pd.DataFrame) -> None:
     team_id = team_ids[abbr]
     if team_id not in set(logs["team_id"]):
         sidebar.info(f"No {season} regular-season games loaded for {abbr} up to {day:%d %b %Y}.")
-        return
+        return abbr
 
     table = league_table(logs)
     team = table.loc[team_id]
@@ -156,7 +162,9 @@ def show_team_stats(season: str, day: date, games_today: pd.DataFrame) -> None:
                           "Rank": st.column_config.NumberColumn(
                               format="%d", help=f"Out of {n_teams} teams. 1 = best."),
                       })
-    sidebar.caption(f"{season} regular season, {int(team['gp'])} games up to {day:%d %b %Y}. Ranks are out of "
+    sidebar.caption(f"{season} regular season, {int(team['gp'])} games, the last on "
+                    f"{games['game_date'].max():%d %b %Y}. Ranks are out of "
                     f"{n_teams} teams, 1 = best: most of everything, except fewest points allowed (Opp pts), "
                     f"turnovers (TOV) and fouls. FGA / FGM = shots taken / made; 3PM / 3PA = threes made / "
                     f"attempted; FTM = free throws made. Pace = possessions per 48 minutes.")
+    return abbr
