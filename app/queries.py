@@ -171,8 +171,10 @@ def player_game_logs(player_id: int) -> pd.DataFrame:
     df["game_date"] = pd.to_datetime(df["game_date"])
     # A column that is NULL in every game (tracking before it was loaded) comes back as
     # Python None objects; make every stat a number so averages and charts work on it.
+    # Converted in one go and joined back with concat: assigning ~100 columns into the frame
+    # would leave it in ~100 pieces, and pandas warns on every column added after that.
     stats = LOG_STATS + USAGE_STATS + TRACKING_STATS
-    df[stats] = df[stats].apply(pd.to_numeric)
+    df = pd.concat([df.drop(columns=stats), df[stats].apply(pd.to_numeric)], axis=1)
     return df.sort_values("game_date").reset_index(drop=True)
 
 
