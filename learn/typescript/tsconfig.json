@@ -1,0 +1,10 @@
+{
+  // Settings VS Code uses to check the .ts files in this folder.
+  "compilerOptions": {
+    "strict": true,              // turn on all the useful checks
+    "target": "ES2022",
+    "noEmit": true,              // only check types; Node runs the .ts files directly
+    "moduleDetection": "force",  // each lesson file gets its own scope
+    "erasableSyntaxOnly": true   // flag syntax Node can't run directly (e.g. enum)
+  }
+}
