@@ -12,5 +12,6 @@ st.set_page_config(page_title="NBA Birthday Explorer", page_icon="🏀", layout=
 page = st.navigation([
     st.Page("player_explorer.py", title="Player explorer", icon="🏀", default=True),
     st.Page("today.py", title="Today", icon="🎂"),
+    st.Page("game_logs.py", title="Game logs", icon="📋"),
 ])
 page.run()

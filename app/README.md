@@ -47,7 +47,7 @@ A website that runs on your own computer for exploring the NBA data: pick a play
    .venv\Scripts\streamlit run app\app.py
    ```
 
-3. Open **http://localhost:8501** in your browser. The terminal also prints this link.
+3. Open **http://localhost:8501** in your browser. The terminal also prints this link. 
 4. To stop it, click in the terminal and press **Ctrl+C**.
 
 Keep the terminal open while you use the app; closing it stops the website.
@@ -62,7 +62,7 @@ The app can read a **Parquet snapshot** of the database instead of SQL Server, u
    .venv\Scripts\python.exe src\run_job.py export
    ```
 
-   This writes 7 files (about 16 MB) and a `manifest.json` to `data/`.
+   This writes 11 files (about 26 MB) and a `manifest.json` to `data/`.
 
 2. Start the app in Parquet mode:
 
@@ -89,12 +89,13 @@ The snapshot doesn't update itself: re-run `export` after loading new data. `exp
 
 ## Using it
 
-The app has two pages; switch between them at the top of the sidebar.
+The app has three pages; switch between them at the top of the sidebar.
 
 | Page | For |
 |---|---|
 | **Player explorer** | One player in depth: his games, his birthday effect, the models (everything below until "The Today page") |
 | **Today** | One date: its games, whose birthday it is, and how those players have done on past birthdays |
+| **Game logs** | One player's season: every game with every stat we load (box score, advanced, usage, scoring, tracking, passing, touches, hustle), charts, splits, career, and his team's stats and game log |
 
 ### The sidebar
 
@@ -140,7 +141,18 @@ The filters apply to the header cards and the Birthday effect, Game log, Season 
 
 Pick a date with the date box, step with **← Previous day** / **Next day →**, or jump back with **Today**.
 
-From top to bottom:
+**Team stats (in the sidebar).** Pick a team; teams playing on the chosen date are listed first, marked 🏀. For the date's season, regular season only, up to and including that date:
+
+| Part | What it shows |
+|---|---|
+| **Plays on this day** | Its game that date, with the score once loaded (only if it plays) |
+| **Cards** | Record, net rating, offensive rating and defensive rating, each with its league rank ("3rd of 30"). Hover the ? for what each means |
+| **Record line** | Home and away records, last 10 games, current streak (W3 = three wins in a row) |
+| **Table** | Per game, season total and league rank for points, points allowed, shots (FGA/FGM), FG %, threes (3PM/3PA), 3P %, free throws, FT %, rebounds (total, offensive, defensive), assists, steals, blocks, turnovers, fouls and pace |
+
+Ranks: 1 = best, which means the most of a stat, except the fewest points allowed, turnovers and fouls, and the lowest defensive rating. Counting stats rank on the per-game average, so teams that have played more games don't rank higher just for that. The ratings are points scored (offence) or allowed (defence) per 100 possessions over the whole season, the way NBA.com works them out: checked against NBA.com for 2025-26, they agree to within 0.05 and every team's rank matches. Early in a season the ranks move a lot, because they rest on a handful of games.
+
+From top to bottom of the page:
 
 | Section | What it shows |
 |---|---|
@@ -164,9 +176,44 @@ Things to know:
 - **The birthday analysis counts from the US date**, the day the game was played where it was played. So a game the night before a player's birthday (US time) is "1 day before", even though in Sydney it was already his birthday.
 - **Teams are today's rosters.** On a past date, a player traded since then shows with his current team.
 - **29 February birthdays** show on 28 February in non-leap years.
-- **No games on a date in 2025-26?** That season's schedule isn't loaded yet: `run_job.py schedule --season 2025-26`.
 - **"No games this close to his birthday"** is normal for summer birthdays (off-season) and early-to-mid October ones (preseason, not loaded).
 - **Scores and "This season" need the game logs loaded** for that date. Today's games show their tip-off time until you load them the next day.
+
+---
+
+### The Game logs page
+
+One player's games in one season, with every stat the pipeline loads, charts of any of them, and his team.
+
+**Sidebar:** pick the **player**, the **season** (newest first) and the **season type** (regular season, playoffs or both). Below that is the same **Team stats** section as on the Today page (see above), set to the team he played for that season. If he was traded, it's the team he finished the season with; the caption under his name shows the move ("DAL → LAL"). Pick any other team there; the Team tab follows it.
+
+**Header:** games, and his per-game minutes, points, rebounds, assists and true shooting % for the games in view.
+
+**Columns:** the buttons above the tabs choose which datasets the Game log, Averages & splits and Career tables show. Each dataset is one of the pipeline's tables or stat groups:
+
+| Dataset | What it holds | Comes from |
+|---|---|---|
+| **Box score** | Minutes, points, rebounds (offensive, defensive), assists, steals, blocks, turnovers, fouls, +/- | `player_game_log` (game_logs job) |
+| **Shooting** | Field goals, threes and free throws (made, attempted, %), effective FG %, true shooting % | `player_game_log` |
+| **Advanced** | Usage %, offensive / defensive / net rating, assist %, assist-to-turnover, rebound %, turnover ratio, PIE, pace, possessions | `player_game_log` |
+| **Share of team** | His share of the team's points, shots, rebounds, assists, steals, blocks, turnovers and fouls while he was on the court | `player_game_usage` (usage job) |
+| **Scoring** | Where his shots and points came from (2s, 3s, mid-range, paint, free throws, fast breaks, off turnovers) and how many of his makes were assisted | `player_game_usage` |
+| **Speed & distance** | Miles run (offence, defence) and average speed | `player_game_tracking` (tracking job) |
+| **Passing** | Passes made and received, potential, secondary and free-throw assists, points created by his assists | `player_game_tracking` |
+| **Touches** | Touches (front court, elbow, post, paint), time on the ball, seconds and dribbles per touch, points per touch | `player_game_tracking` |
+| **Hustle** | Contested shots (2s, 3s), deflections, charges drawn, screen assists, loose balls, box-outs | `player_game_tracking` |
+
+The last four start in 2025-26 until the tracking backfill runs (`run_job.py tracking`); for older seasons the page says so.
+
+| Tab | What it shows |
+|---|---|
+| **Game log** | Every game, newest first: date (Sydney and US), game, result with the score, whether he started, and the chosen columns. **Download as CSV** saves exactly what's shown |
+| **Charts** | Pick any stats from any dataset (type to search). One chart each: a grey dot per game, a dashed line for his average, and a blue **rolling average** of his last 3, 5 or 10 games (or off). Hover a dot for the game |
+| **Averages & splits** | Per-game averages for all games, home / away, wins / losses, started / off the bench, back-to-backs and days of rest, his last 5 and 10 games, and each month |
+| **Career** | His per-game averages season by season (for the chosen season type), and a bar chart of any stat with the selected season highlighted |
+| **Team** | The sidebar team's regular season: a bar per game showing how many points it won or lost by, and its game log with the score, shooting, rebounds, assists, ratings and pace. **He played** shows the games he missed when it's his team |
+
+Averages: shooting percentages (FG %, 3P %, FT %, eFG %, TS %) are worked out from his totals, all makes over all attempts, so a 1-for-1 night doesn't count as much as a 10-for-25 one. Other percentages and ratings are the average of each game's figure.
 
 ## How it works
 
@@ -264,8 +311,10 @@ Colours follow the project's data-viz palette: one blue for single-series charts
 | [app.py](app.py) | The entry point and router: page settings, and the list of pages (`st.navigation`). Still the file you run |
 | [player_explorer.py](player_explorer.py) | The Player explorer page: helper functions, the sidebar, the header, and one block per tab |
 | [today.py](today.py) | The Today page |
-| [common.py](common.py) | Shared by both pages: colours, the stat list, birthday helpers, and the data-source check |
-| [queries.py](queries.py) | Every SQL query the app runs, each a cached function: `players()`, `player_games()`, `player_seasons()`, `player_missed_games()`, `upcoming_birthday_games()`, `league_birthday_leaders()`, `pipeline_status()` |
+| [game_logs.py](game_logs.py) | The Game logs page. `DATASETS` at the top lists every stat column with its label, grouped by dataset; add a column there (and to the lists in `queries.py`) to show it |
+| [team_stats.py](team_stats.py) | The Today page's **Team stats** sidebar: `league_table()` turns every team's game logs into season totals, ratings and records, and `show_team_stats()` draws the team picker, cards and table. Its data is `dbo.team_game_log`, already loaded daily, so it needs no extra NBA API calls |
+| [common.py](common.py) | Shared by the pages: colours, the stat list, birthday helpers, the chart grid (`chart_grid()`), and the data-source check |
+| [queries.py](queries.py) | Every SQL query the app runs, each a cached function: `players()`, `player_games()`, `player_game_logs()`, `player_seasons()`, `player_missed_games()`, `upcoming_birthday_games()`, `league_birthday_leaders()`, `games_on()`, `season_games()`, `teams()`, `team_season_games()`, `nearest_game_dates()`, `pipeline_status()` |
 | [../src/export.py](../src/export.py) | The `export` job: writes the Parquet snapshot to `data/` |
 | [model_results.py](model_results.py) | Reads the model results from `outputs/`. The cache is keyed on the files' modification time, so re-running the models shows up on the next page reload |
 | [../.streamlit/config.toml](../.streamlit/config.toml) | App settings: address, port, theme colour, toolbar |

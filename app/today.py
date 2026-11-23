@@ -8,14 +8,13 @@ import streamlit as st
 
 import queries
 from common import (BACKGROUND, HIGHLIGHT, LOCAL_NAME, NEUTRAL, PHASES, STATS, birthday_label, birthday_on,
-                    require_data, style_page, to_local)
+                    chart_grid, require_data, style_page, to_local)
+from team_stats import show_team_stats
 
 DAY_KEY = "today_page_day"
 BIRTHDAY_WINDOW = 3     # players whose birthday is this many days either side of the chosen date
 HISTORY_WINDOW = 4      # past games shown this many days either side of each birthday
 DEFAULT_STATS = ["pts", "fg3m"]
-CHARTS_PER_ROW = 3
-CHART_HEIGHT = 260
 PHASE_LABELS = ["Before", "On birthday", "After"]
 PHASE_COLORS = [PHASES[p][1] for p in ("before", "on", "after")]
 BIRTHDAY_COLOR = PHASES["on"][1]
@@ -107,16 +106,6 @@ def show_table(table: pd.DataFrame, rows: pd.Series = None) -> None:
     st.dataframe(data, hide_index=True, width="stretch", column_config=config, placeholder="—")
 
 
-def chart_grid(stats: list, make_chart) -> None:
-    """Small multiples: one chart per stat, each with its own scale, CHARTS_PER_ROW to a row."""
-    for start in range(0, len(stats), CHARTS_PER_ROW):
-        columns = st.columns(CHARTS_PER_ROW)
-        for column, stat in zip(columns, stats[start:start + CHARTS_PER_ROW]):
-            with column:
-                # An explicit element height: in narrow columns the chart's own height isn't kept.
-                st.altair_chart(make_chart(stat), width="stretch", height=CHART_HEIGHT)
-
-
 # ---------------------------------------------------------------- the date
 st.session_state.setdefault(DAY_KEY, date.today())
 c_prev, c_date, c_next, c_today = st.columns([1, 3, 1, 1], vertical_alignment="bottom")
@@ -131,6 +120,7 @@ day = st.session_state[DAY_KEY]
 players = queries.players()
 games = queries.games_on(day)
 season = games["season"].iloc[0] if not games.empty else season_of(day)
+show_team_stats(season, day, games)
 
 
 def nearest_birthday(birthdate: date) -> date:

@@ -66,6 +66,10 @@ PAGE_CSS = """
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
+/* Smaller cards in the sidebar, where they sit two to a row */
+[data-testid="stSidebar"] [data-testid="stMetric"] { padding: 10px 12px; }
+[data-testid="stSidebar"] [data-testid="stMetricLabel"] p { font-size: 0.68rem; letter-spacing: 0.02em; }
+[data-testid="stSidebar"] [data-testid="stMetricValue"] { font-size: 1.6rem; }
 /* Section headings with a quiet rule underneath */
 h3 { border-bottom: 1px solid #2e2e2c; padding-bottom: 0.35rem; }
 </style>
@@ -83,6 +87,16 @@ def to_local(tipoff_et) -> pd.Series:
 
 def style_page() -> None:
     st.markdown(PAGE_CSS, unsafe_allow_html=True)
+
+
+def chart_grid(stats: list, make_chart, per_row: int = 3, height: int = 260) -> None:
+    """Small multiples: one chart per stat, each with its own scale, `per_row` to a row."""
+    for start in range(0, len(stats), per_row):
+        columns = st.columns(per_row)
+        for column, stat in zip(columns, stats[start:start + per_row]):
+            with column:
+                # An explicit element height: in narrow columns the chart's own height isn't kept.
+                st.altair_chart(make_chart(stat), width="stretch", height=height)
 
 
 def next_birthday(birthdate: date, today: date) -> tuple:

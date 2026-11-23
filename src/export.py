@@ -21,6 +21,10 @@ EXPORTS = {
     "dbo.player": "SELECT * FROM dbo.player",
     "dbo.schedule": "SELECT * FROM dbo.schedule",
     "dbo.team_game_log": "SELECT * FROM dbo.team_game_log",
+    # For the Game logs page. player_game_log itself isn't exported: the app reads it from
+    # the features file, which holds all of its columns.
+    "dbo.player_game_usage": "SELECT * FROM dbo.player_game_usage",
+    "dbo.player_game_tracking": "SELECT * FROM dbo.player_game_tracking",
     "dbo.v_player_game_features": "SELECT * FROM dbo.v_player_game_features",
     "dbo.v_birthday_week_vs_season": "SELECT * FROM dbo.v_birthday_week_vs_season",
     "dbo.v_player_missed_games": "SELECT * FROM dbo.v_player_missed_games",
